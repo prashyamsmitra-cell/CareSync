@@ -65,6 +65,24 @@ const METRICS = [
   { label:'Temperature',    value:'98.6',   unit:'°F',   icon:'◈', trend:'Normal',ok:true  },
 ]
 
+/* ─── Logo component ─────────────────────────────────────────── */
+function Logo({ size = 34, borderRadius = 10 }) {
+  return (
+    <img
+      src="/logo.jpeg"
+      alt="CareSync Logo"
+      style={{
+        width: size,
+        height: size,
+        borderRadius,
+        objectFit: 'contain',
+        display: 'block',
+        flexShrink: 0,
+      }}
+    />
+  )
+}
+
 /* ─── LANDING ────────────────────────────────────────────────── */
 function Landing({ onEnter, formRef }) {
   const [nav, setNav] = useState(false)
@@ -88,14 +106,7 @@ function Landing({ onEnter, formRef }) {
       }}>
         <div style={{maxWidth:1200, margin:'0 auto', padding:'18px 32px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
           <div style={{display:'flex', alignItems:'center', gap:10}}>
-            <div style={{
-              width:34, height:34, borderRadius:10, cursor:'pointer',
-              background:'linear-gradient(135deg,#00b4a0,#00d4c8)',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              boxShadow:'0 4px 14px rgba(0,180,160,0.35)',
-            }}>
-              <span style={{color:'#fff', fontWeight:800, fontFamily:'var(--font-h)', fontSize:'1rem'}}>C</span>
-            </div>
+            <Logo size={34} borderRadius={10} />
             <span style={{fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.1rem', color: nav ? 'var(--c-dark)' : '#fff', transition:'.3s'}}>
               CareSync
             </span>
@@ -292,9 +303,7 @@ function Landing({ onEnter, formRef }) {
       {/* FOOTER */}
       <footer style={{background:'#090e1a',color:'rgba(255,255,255,0.35)',padding:'48px 32px',textAlign:'center'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,marginBottom:16}}>
-          <div style={{width:30,height:30,borderRadius:9,background:'linear-gradient(135deg,#00b4a0,#00d4c8)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <span style={{color:'#fff',fontWeight:800,fontSize:'.85rem'}}>C</span>
-          </div>
+          <Logo size={30} borderRadius={9} />
           <span style={{color:'rgba(255,255,255,0.75)',fontFamily:'var(--font-h)',fontWeight:700}}>CareSync</span>
         </div>
         <p style={{fontSize:'.8rem'}}>© 2026 CareSync Health Technologies · HIPAA Compliant · SOC 2 Type II Certified</p>
@@ -407,9 +416,7 @@ function Dashboard({ onChat }) {
       }}>
         <div style={{maxWidth:1300,margin:'0 auto',padding:'14px 32px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <div style={{width:32,height:32,borderRadius:10,background:'linear-gradient(135deg,#00b4a0,#00d4c8)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 14px rgba(0,180,160,0.3)'}}>
-              <span style={{color:'#fff',fontWeight:800,fontFamily:'var(--font-h)'}}>C</span>
-            </div>
+            <Logo size={32} borderRadius={10} />
             <span style={{fontFamily:'var(--font-h)',fontWeight:700,fontSize:'1.05rem'}}>CareSync</span>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:12}}>
@@ -710,6 +717,9 @@ export default function App() {
         : <Dashboard onChat={() => setChat(true)} />
       }
       {chat && <ChatBot onClose={() => setChat(false)} />}
+    </>
+  )
+}
     </>
   )
 }
