@@ -415,7 +415,7 @@ function FileUploader({ pid, onUploaded }) {
     <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
       {/* Type selector */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+      <div className="file-type-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
         {FILE_TYPES.map(ft => (
           <button key={ft.value} onClick={() => setFileType(ft.value)} style={{ padding:'10px 8px', borderRadius:12, border:`1.5px solid ${fileType === ft.value ? ft.color : 'rgba(0,0,0,0.08)'}`, background: fileType === ft.value ? `${ft.color}12` : '#fff', cursor:'pointer', transition:'all .2s', display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
             <span style={{ fontSize:'1.2rem' }}>{ft.icon}</span>
@@ -592,9 +592,9 @@ function ChatBot({ patient, onClose }) {
   }
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:200, display:'flex', alignItems:'flex-end', justifyContent:'flex-end', padding:'24px' }}>
+    <div className="chat-wrapper" style={{ position:'fixed', inset:0, zIndex:200, display:'flex', alignItems:'flex-end', justifyContent:'flex-end', padding:'24px' }}>
       <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(9,14,26,0.35)', backdropFilter:'blur(6px)' }} />
-      <div style={{ position:'relative', width:'100%', maxWidth:420, height:640, maxHeight:'90vh', borderRadius:28, overflow:'hidden', display:'flex', flexDirection:'column', background:'rgba(255,255,255,0.9)', backdropFilter:'blur(40px)', border:'1px solid rgba(255,255,255,0.65)', boxShadow:'0 32px 80px rgba(0,0,0,0.18)' }}>
+      <div className="chat-panel" style={{ position:'relative', width:'100%', maxWidth:420, height:640, maxHeight:'90vh', borderRadius:28, overflow:'hidden', display:'flex', flexDirection:'column', background:'rgba(255,255,255,0.9)', backdropFilter:'blur(40px)', border:'1px solid rgba(255,255,255,0.65)', boxShadow:'0 32px 80px rgba(0,0,0,0.18)' }}>
         {/* header */}
         <div style={{ background:'linear-gradient(135deg,#060d1f,#0a2428)', padding:'18px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -669,46 +669,67 @@ function Dashboard({ patient, onLogout }) {
   useEffect(() => { if (activeTab === 'files') fetchFiles() }, [activeTab])
 
   const TABS = [
-    { id:'overview', label:'Overview',  icon:'🏠' },
-    { id:'files',    label:'My Files',  icon:'📁' },
-    { id:'upload',   label:'Upload',    icon:'⬆️'  },
+    { id:'overview', label:'Overview', icon:'🏠' },
+    { id:'files',    label:'Files',    icon:'📁' },
+    { id:'upload',   label:'Upload',   icon:'⬆️'  },
+    { id:'chat',     label:'AI Chat',  icon:'✦'   },
   ]
 
   return (
     <div style={{ minHeight:'100vh', background:'var(--c-bg)', paddingTop:76 }}>
 
-      {/* Navbar */}
+      {/* Desktop Navbar */}
       <nav style={{ position:'fixed', top:0, left:0, right:0, zIndex:100, background:'rgba(240,244,248,0.92)', backdropFilter:'blur(24px)', borderBottom:'1px solid rgba(0,0,0,0.06)', height:64 }}>
-        <div style={{ maxWidth:1280, margin:'0 auto', padding:'0 28px', height:'100%', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div className="dash-nav-inner" style={{ maxWidth:1280, margin:'0 auto', padding:'0 28px', height:'100%', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <Logo size={32} radius={9} />
             <span style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem' }}>CareSync</span>
           </div>
-          {/* Tab navigation */}
-          <div style={{ display:'flex', gap:4 }}>
-            {TABS.map(t => (
+          {/* Desktop tabs */}
+          <div className="desktop-tabs" style={{ display:'flex', gap:4 }}>
+            {TABS.filter(t => t.id !== 'chat').map(t => (
               <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 16px', borderRadius:50, border:'none', cursor:'pointer', fontFamily:'var(--font-b)', fontWeight:600, fontSize:'.83rem', transition:'all .2s', background: activeTab === t.id ? 'rgba(0,180,160,0.12)' : 'transparent', color: activeTab === t.id ? 'var(--c-teal)' : 'var(--c-muted)' }}>
                 <span>{t.icon}</span> {t.label}
               </button>
             ))}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <button className="btn" style={{ padding:'8px 18px', fontSize:'.82rem' }} onClick={() => setChat(true)}>✦ AI Chat</button>
+            <button className="btn desktop-tabs" style={{ padding:'8px 18px', fontSize:'.82rem', display:'inline-flex' }} onClick={() => setChat(true)}>✦ AI Chat</button>
             <div style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 12px 6px 6px', borderRadius:50, border:'1px solid rgba(0,0,0,0.08)', background:'rgba(255,255,255,0.8)', cursor:'pointer' }} onClick={onLogout}>
               <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#00b4a0,#00d4c8)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:'.78rem' }}>{initials}</div>
-              <span style={{ fontSize:'.8rem', fontWeight:600, color:'var(--c-muted)' }}>Sign out</span>
+              <span className="desktop-tabs" style={{ display:'inline', fontSize:'.8rem', fontWeight:600, color:'var(--c-muted)' }}>Sign out</span>
             </div>
           </div>
         </div>
       </nav>
 
-      <div style={{ maxWidth:1280, margin:'0 auto', padding:'24px 28px 60px' }}>
+      {/* Mobile bottom navigation */}
+      <nav className="mobile-nav">
+        <div className="mobile-nav-inner">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              className={'mobile-nav-btn' + ((activeTab === t.id && t.id !== 'chat') || (t.id === 'chat' && chat) ? ' active' : '')}
+              onClick={() => { if (t.id === 'chat') { setChat(true) } else { setActiveTab(t.id); setChat(false) } }}
+            >
+              <span>{t.icon}</span>
+              <span style={{ color: (activeTab === t.id && t.id !== 'chat') || (t.id === 'chat' && chat) ? 'var(--c-teal)' : 'var(--c-muted)' }}>{t.label}</span>
+            </button>
+          ))}
+          <button className="mobile-nav-btn" onClick={onLogout}>
+            <span>🚪</span>
+            <span style={{ color:'var(--c-muted)' }}>Out</span>
+          </button>
+        </div>
+      </nav>
+
+      <div className="dashboard-content" style={{ maxWidth:1280, margin:'0 auto', padding:'24px 28px 60px' }}>
 
         {/* ── OVERVIEW TAB ── */}
         {activeTab === 'overview' && (
           <>
             {/* Welcome banner */}
-            <div style={{ borderRadius:24, overflow:'hidden', marginBottom:26, position:'relative', background:'linear-gradient(135deg,#060d1f 0%,#0a2428 60%,#061a1a 100%)', padding:'36px 44px' }}>
+            <div className="welcome-banner" style={{ borderRadius:24, overflow:'hidden', marginBottom:26, position:'relative', background:'linear-gradient(135deg,#060d1f 0%,#0a2428 60%,#061a1a 100%)', padding:'36px 44px' }}>
               <div className="dotgrid" style={{ position:'absolute', inset:0, opacity:.35 }} />
               <div style={{ position:'absolute', top:-50, right:-50, width:260, height:260, borderRadius:'50%', background:'radial-gradient(circle,rgba(0,180,160,0.22) 0%,transparent 70%)' }} />
               <div style={{ position:'relative', zIndex:1 }}>
@@ -720,9 +741,9 @@ function Dashboard({ patient, onLogout }) {
                   Patient ID: <span style={{ color:'var(--c-cyan)', fontWeight:700, fontFamily:'var(--font-h)' }}>{patient?.pid}</span>
                   &nbsp;·&nbsp; Your health summary is looking great.
                 </p>
-                <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+                <div className="welcome-stats" style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
                   {[['3 Appointments','Upcoming'],['2 Medications','Active'],['1 Lab Result','New']].map(([v, l]) => (
-                    <div key={l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:12, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.1)' }}>
+                    <div className="welcome-stat" key={l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:12, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.1)' }}>
                       <p style={{ color:'#fff', fontWeight:700, fontSize:'.9rem' }}>{v}</p>
                       <p style={{ color:'rgba(255,255,255,0.38)', fontSize:'.72rem', marginTop:1 }}>{l}</p>
                     </div>
@@ -731,7 +752,7 @@ function Dashboard({ patient, onLogout }) {
               </div>
             </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:22 }}>
+            <div className="dashboard-grid" style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:22 }}>
               {/* Left column */}
               <div style={{ display:'flex', flexDirection:'column', gap:22 }}>
 
@@ -741,7 +762,7 @@ function Dashboard({ patient, onLogout }) {
                     <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem' }}>Physical Profile</h2>
                     <button onClick={() => setActiveTab('overview')} style={{ fontSize:'.78rem', color:'var(--c-teal)', fontWeight:600, background:'none', border:'none', cursor:'pointer' }}>Edit →</button>
                   </div>
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
+                  <div className="physical-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
                     {[
                       { label:'Weight',     value: patient?.weight_kg ? `${patient.weight_kg}` : '—', unit:'kg',   icon:'⚖️',  color:'#6366f1' },
                       { label:'Height',     value: patient?.height_cm ? `${patient.height_cm}` : '—', unit:'cm',   icon:'📏',  color:'#0ea5e9' },
@@ -766,7 +787,7 @@ function Dashboard({ patient, onLogout }) {
                     <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem' }}>Vital Signs</h2>
                     <span style={{ background:'rgba(34,197,94,0.1)', color:'#16a34a', fontWeight:700, fontSize:'.7rem', padding:'4px 12px', borderRadius:50, border:'1px solid rgba(34,197,94,0.2)' }}>ALL NORMAL</span>
                   </div>
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
+                  <div className="vitals-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
                     {[
                       { label:'Heart Rate', value:'72',     unit:'bpm',  icon:'♥', color:'#f43f5e', trend:'+2%' },
                       { label:'Blood Pressure', value:'118/76', unit:'mmHg', icon:'◎', color:'#6366f1', trend:'Stable' },
@@ -869,7 +890,7 @@ function Dashboard({ patient, onLogout }) {
       </div>
 
       {/* FAB */}
-      <button className="btn" onClick={() => setChat(true)} style={{ position:'fixed', bottom:32, right:32, width:56, height:56, borderRadius:18, fontSize:'1.3rem', padding:0, justifyContent:'center', boxShadow:'0 10px 30px rgba(0,180,160,0.4)', zIndex:50, animation:'glow 3s ease-in-out infinite' }} title="AI Assistant">✦</button>
+      <button className="btn fab-btn" onClick={() => setChat(true)} style={{ position:'fixed', bottom:32, right:32, width:56, height:56, borderRadius:18, fontSize:'1.3rem', padding:0, justifyContent:'center', boxShadow:'0 10px 30px rgba(0,180,160,0.4)', zIndex:50, animation:'glow 3s ease-in-out infinite' }} title="AI Assistant">✦</button>
 
       {chat && <ChatBot patient={patient} onClose={() => setChat(false)} />}
     </div>
