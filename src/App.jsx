@@ -935,14 +935,6 @@ function Landing({ onOpenAuth }) {
         <div style={{ position:'absolute', bottom:'10%', right:'5%', width:360, height:360, borderRadius:'50%', background:'radial-gradient(circle,rgba(0,212,200,0.14) 0%,transparent 70%)', animation:'floatR 9s ease-in-out infinite' }} />
         <div style={{ position:'absolute', top:'22%', right:'13%', width:160, height:160, border:'1px dashed rgba(0,180,160,0.22)', borderRadius:'50%', animation:'spin 20s linear infinite' }} />
 
-        {/* floating card */}
-        <div className="glass-dark" style={{ position:'absolute', top:'22%', right:'10%', padding:'14px 18px', borderRadius:16, minWidth:180, animation:'float 6s 1s ease-in-out infinite' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:7 }}>
-            <div style={{ width:7, height:7, borderRadius:'50%', background:'#22c55e', boxShadow:'0 0 8px #22c55e' }} />
-            <span style={{ color:'rgba(255,255,255,0.45)', fontSize:'.68rem', fontWeight:600, letterSpacing:'.05em' }}>LIVE VITALS</span>
-          </div>
-          <div style={{ color:'#fff', fontWeight:800, fontSize:'1.4rem', fontFamily:'var(--font-h)' }}>98 <span style={{ fontSize:'.72rem', fontWeight:400, color:'rgba(255,255,255,0.45)' }}>SpO₂%</span></div>
-        </div>
 
         <div style={{ position:'relative', zIndex:2, textAlign:'center', padding:'0 24px', maxWidth:820, margin:'0 auto' }}>
           <div className="pill fu" style={{ marginBottom:26, color:'rgba(0,212,200,0.9)', borderColor:'rgba(0,180,160,0.3)', background:'rgba(0,180,160,0.08)' }}>
