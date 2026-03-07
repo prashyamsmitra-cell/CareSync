@@ -94,6 +94,30 @@ function Inp({ error, style: s, ...props }) {
   )
 }
 
+function PasswordInp({ error, value, onChange, placeholder = '••••••••', name }) {
+  const [show, setShow] = useState(false)
+  return (
+    <div style={{ position:'relative' }}>
+      <input
+        className={`inp${error ? ' inp-err' : ''}`}
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        name={name}
+        style={{ paddingRight:46 }}
+      />
+      <button
+        type="button"
+        onClick={() => setShow(v => !v)}
+        style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--c-muted)', fontSize:'1rem', padding:0, display:'flex', alignItems:'center' }}
+      >
+        {show ? '🙈' : '👁'}
+      </button>
+    </div>
+  )
+}
+
 function Spinner({ size = 18, color = '#fff' }) {
   return (
     <span style={{
@@ -101,6 +125,22 @@ function Spinner({ size = 18, color = '#fff' }) {
       border:`2px solid ${color}30`, borderTopColor:color,
       borderRadius:'50%', animation:'spin .7s linear infinite', flexShrink:0,
     }} />
+  )
+}
+
+function AppointmentCountBadge({ pid, onBook }) {
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    authFetch('/appointments').then(d => {
+      const active = (d.data || []).filter(a => a.status === 'pending' || a.status === 'confirmed')
+      setCount(active.length)
+    }).catch(()=>{})
+  }, [])
+  return (
+    <div className="welcome-stat" onClick={onBook} style={{ background:'rgba(255,255,255,0.08)', borderRadius:12, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer' }}>
+      <p style={{ color:'#fff', fontWeight:700, fontSize:'.9rem' }}>{count} Appointment{count !== 1 ? 's' : ''}</p>
+      <p style={{ color:'rgba(255,255,255,0.38)', fontSize:'.72rem', marginTop:1 }}>{count === 0 ? 'Book one →' : 'Upcoming'}</p>
+    </div>
   )
 }
 
@@ -251,7 +291,7 @@ function AuthModal({ onSuccess, onClose }) {
               <Inp error={loginErrs.email} type="email" placeholder="you@hospital.com" value={loginForm.email} onChange={e => setL('email', e.target.value)} />
             </Field>
             <Field label="Password" error={loginErrs.password}>
-              <Inp error={loginErrs.password} type="password" placeholder="••••••••" value={loginForm.password} onChange={e => setL('password', e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+              <PasswordInp error={loginErrs.password} value={loginForm.password} onChange={e => setL('password', e.target.value)} />
             </Field>
             <button className="btn" onClick={handleLogin} disabled={loading} style={{ padding:'14px', justifyContent:'center', fontSize:'1rem', borderRadius:14, gap:8, opacity: loading ? .7 : 1 }}>
               {loading ? <><Spinner /> Signing in…</> : 'Sign In →'}
@@ -284,10 +324,10 @@ function AuthModal({ onSuccess, onClose }) {
               </Field>
             </div>
             <Field label="Password" error={signupErrs.password}>
-              <Inp error={signupErrs.password} type="password" placeholder="Min 8 characters" value={signupForm.password} onChange={e => setS('password', e.target.value)} />
+              <PasswordInp error={signupErrs.password} value={signupForm.password} onChange={e => setS('password', e.target.value)} placeholder="Min 8 characters" />
             </Field>
             <Field label="Confirm password" error={signupErrs.confirmPassword}>
-              <Inp error={signupErrs.confirmPassword} type="password" placeholder="Re-enter password" value={signupForm.confirmPassword} onChange={e => setS('confirmPassword', e.target.value)} />
+              <PasswordInp error={signupErrs.confirmPassword} value={signupForm.confirmPassword} onChange={e => setS('confirmPassword', e.target.value)} placeholder="Re-enter password" />
             </Field>
             <button className="btn" onClick={() => { const e = validateStep1(); if (Object.keys(e).length) { setSignupErrs(e); return } setStep(2) }} style={{ padding:'14px', justifyContent:'center', fontSize:'1rem', borderRadius:14 }}>
               Continue →
@@ -669,10 +709,11 @@ function Dashboard({ patient, onLogout }) {
   useEffect(() => { if (activeTab === 'files') fetchFiles() }, [activeTab])
 
   const TABS = [
-    { id:'overview', label:'Overview', icon:'🏠' },
-    { id:'files',    label:'Files',    icon:'📁' },
-    { id:'upload',   label:'Upload',   icon:'⬆️'  },
-    { id:'chat',     label:'AI Chat',  icon:'✦'   },
+    { id:'overview',      label:'Overview',     icon:'🏠' },
+    { id:'appointments',  label:'Appointments', icon:'📅' },
+    { id:'files',         label:'Files',        icon:'📁' },
+    { id:'upload',        label:'Upload',       icon:'⬆️'  },
+    { id:'chat',          label:'AI Chat',      icon:'✦'   },
   ]
 
   return (
@@ -742,12 +783,15 @@ function Dashboard({ patient, onLogout }) {
                   &nbsp;·&nbsp; Your health summary is looking great.
                 </p>
                 <div className="welcome-stats" style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
-                  {[['3 Appointments','Upcoming'],['2 Medications','Active'],['1 Lab Result','New']].map(([v, l]) => (
+                  {[
+                    [`${files.filter(f=>f).length} Files`, 'Uploaded'],
+                  ].map(([v, l]) => (
                     <div className="welcome-stat" key={l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:12, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.1)' }}>
                       <p style={{ color:'#fff', fontWeight:700, fontSize:'.9rem' }}>{v}</p>
                       <p style={{ color:'rgba(255,255,255,0.38)', fontSize:'.72rem', marginTop:1 }}>{l}</p>
                     </div>
                   ))}
+                  <AppointmentCountBadge pid={patient?.pid} onBook={() => setActiveTab('appointments')} />
                 </div>
               </div>
             </div>
@@ -873,6 +917,9 @@ function Dashboard({ patient, onLogout }) {
           </div>
         )}
 
+        {/* ── APPOINTMENTS TAB ── */}
+        {activeTab === 'appointments' && <AppointmentsTab patient={patient} />}
+
         {/* ── UPLOAD TAB ── */}
         {activeTab === 'upload' && (
           <div style={{ maxWidth:680, margin:'0 auto' }}>
@@ -900,7 +947,7 @@ function Dashboard({ patient, onLogout }) {
 /* ════════════════════════════════════════════════════════════════
    LANDING PAGE
 ════════════════════════════════════════════════════════════════ */
-function Landing({ onOpenAuth }) {
+function Landing({ onOpenAuth, onDoctorPortal }) {
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 50)
@@ -912,18 +959,23 @@ function Landing({ onOpenAuth }) {
     <div style={{ background:'var(--c-bg)', minHeight:'100vh' }}>
       {/* Nav */}
       <nav style={{ position:'fixed', top:0, left:0, right:0, zIndex:100, transition:'all .3s', background: scrolled ? 'rgba(240,244,248,0.88)' : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? '1px solid rgba(0,0,0,0.06)' : '1px solid transparent' }}>
-        <div style={{ maxWidth:1200, margin:'0 auto', padding:'16px 32px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+        <div style={{ maxWidth:1200, margin:'0 auto', padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
             <Logo size={32} radius={9} />
             <span style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem', color: scrolled ? 'var(--c-dark)' : '#fff', transition:'.3s' }}>CareSync</span>
           </div>
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          {/* Desktop nav links */}
+          <div className="desktop-tabs" style={{ display:'flex', alignItems:'center', gap:8 }}>
             {['Features','About','Pricing'].map(l => (
               <a key={l} href="#" style={{ color: scrolled ? 'var(--c-muted)' : 'rgba(255,255,255,0.7)', fontWeight:500, fontSize:'.85rem', textDecoration:'none', padding:'6px 12px', borderRadius:50, transition:'all .2s' }}
                 onMouseEnter={e => e.target.style.color = scrolled ? 'var(--c-dark)' : '#fff'}
                 onMouseLeave={e => e.target.style.color = scrolled ? 'var(--c-muted)' : 'rgba(255,255,255,0.7)'}>{l}</a>
             ))}
             <button className="btn" style={{ padding:'9px 20px', fontSize:'.82rem' }} onClick={onOpenAuth}>Get Started</button>
+          </div>
+          {/* Mobile — just Get Started button */}
+          <div className="mobile-only" style={{ display:'none' }}>
+            <button className="btn" style={{ padding:'8px 16px', fontSize:'.78rem' }} onClick={onOpenAuth}>Get Started</button>
           </div>
         </div>
       </nav>
@@ -952,7 +1004,7 @@ function Landing({ onOpenAuth }) {
               Get Started
               <svg viewBox="0 0 20 20" fill="currentColor" style={{ width:15, height:15 }}><path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" /></svg>
             </button>
-            <button className="btn-ow" style={{ fontSize:'1rem', padding:'15px 34px' }} onClick={onOpenAuth}>Sign In</button>
+            <button className="btn-ow" style={{ fontSize:'1rem', padding:'15px 34px' }} onClick={onDoctorPortal}>Doctor Portal</button>
           </div>
           <div className="fu4" style={{ display:'flex', justifyContent:'center', gap:44, marginTop:56, flexWrap:'wrap' }}>
             {[['50K+','Patients'],['99.9%','Uptime'],['4.9★','Rating']].map(([v, l]) => (
@@ -1001,23 +1053,635 @@ function Landing({ onOpenAuth }) {
   )
 }
 
+
+/* ════════════════════════════════════════════════════════════════
+   APPOINTMENTS TAB
+════════════════════════════════════════════════════════════════ */
+function AppointmentsTab({ patient }) {
+  const [doctors,       setDoctors]       = useState([])
+  const [appointments,  setAppointments]  = useState([])
+  const [showBook,      setShowBook]      = useState(false)
+  const [selDoctor,     setSelDoctor]     = useState(null)
+  const [selDate,       setSelDate]       = useState('')
+  const [availSlots,    setAvailSlots]    = useState([])
+  const [selSlot,       setSelSlot]       = useState('')
+  const [reason,        setReason]        = useState('')
+  const [loading,       setLoading]       = useState(false)
+  const [slotsLoading,  setSlotsLoading]  = useState(false)
+  const [result,        setResult]        = useState(null)
+  const [pings,         setPings]         = useState([])
+
+  useEffect(() => {
+    fetchDoctors()
+    fetchAppointments()
+    fetchPings()
+  }, [])
+
+  useEffect(() => {
+    if (selDoctor && selDate) fetchSlots()
+  }, [selDoctor, selDate])
+
+  const fetchDoctors = async () => {
+    try { const d = await authFetch('/doctors'); setDoctors(d.data || []) } catch(e){}
+  }
+  const fetchAppointments = async () => {
+    try { const d = await authFetch('/appointments'); setAppointments(d.data || []) } catch(e){}
+  }
+  const fetchPings = async () => {
+    try { const d = await authFetch('/diagnoses/pings/mine'); setPings(d.data || []) } catch(e){}
+  }
+  const fetchSlots = async () => {
+    setSlotsLoading(true); setSelSlot('')
+    try {
+      const d = await authFetch(`/doctors/${selDoctor}/available-slots?date=${selDate}`)
+      setAvailSlots(d.available || [])
+    } catch(e){ setAvailSlots([]) }
+    finally { setSlotsLoading(false) }
+  }
+  const dismissPing = async (id) => {
+    try { await authFetch(`/diagnoses/pings/${id}/read`, { method:'PATCH' }); fetchPings() } catch(e){}
+  }
+  const bookAppointment = async () => {
+    if (!selDoctor || !selDate || !selSlot) return
+    setLoading(true); setResult(null)
+    try {
+      await authFetch('/appointments', { method:'POST', body: JSON.stringify({ doctor_id:selDoctor, date:selDate, time_slot:selSlot, reason }) })
+      setResult({ success:true, message:'Appointment booked successfully!' })
+      setShowBook(false); setSelDoctor(null); setSelDate(''); setSelSlot(''); setReason('')
+      fetchAppointments()
+    } catch(e) { setResult({ success:false, message:e.message }) }
+    finally { setLoading(false) }
+  }
+  const cancelAppointment = async (id) => {
+    if (!confirm('Cancel this appointment?')) return
+    try { await authFetch(`/appointments/${id}/cancel`, { method:'PATCH' }); fetchAppointments() } catch(e){ alert(e.message) }
+  }
+
+  const statusColors = { pending:'#f59e0b', confirmed:'#22c55e', completed:'#6366f1', cancelled:'#ef4444' }
+  const minDate = new Date().toISOString().split('T')[0]
+
+  return (
+    <div style={{ maxWidth:900, margin:'0 auto' }}>
+
+      {/* Doctor pings */}
+      {pings.length > 0 && (
+        <div style={{ marginBottom:20 }}>
+          {pings.map(p => (
+            <div key={p.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 18px', background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.25)', borderRadius:16, marginBottom:10 }}>
+              <span style={{ fontSize:'1.3rem' }}>🔔</span>
+              <div style={{ flex:1 }}>
+                <p style={{ fontWeight:700, fontSize:'.88rem' }}>Message from {p.doctor_name}</p>
+                <p style={{ fontSize:'.8rem', color:'var(--c-muted)', marginTop:2 }}>{p.message}</p>
+              </div>
+              <button onClick={() => dismissPing(p.id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--c-muted)', fontSize:'1.1rem' }}>×</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
+        <div>
+          <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.6rem' }}>Appointments</h1>
+          <p style={{ color:'var(--c-muted)', fontSize:'.85rem', marginTop:4 }}>{appointments.filter(a => a.status !== 'cancelled').length} active appointment(s)</p>
+        </div>
+        <button className="btn" style={{ padding:'10px 20px', fontSize:'.84rem' }} onClick={() => setShowBook(v => !v)}>
+          {showBook ? '× Close' : '+ Book Appointment'}
+        </button>
+      </div>
+
+      {result && <div style={{ marginBottom:16 }}><Alert type={result.success ? 'success' : 'error'}>{result.message}</Alert></div>}
+
+      {/* Booking form */}
+      {showBook && (
+        <div className="card" style={{ padding:28, marginBottom:24 }}>
+          <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem', marginBottom:20 }}>Book New Appointment</h2>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
+            <Field label="Select Doctor">
+              <select className="inp" value={selDoctor || ''} onChange={e => setSelDoctor(e.target.value)} style={{ background:'rgba(255,255,255,0.9)' }}>
+                <option value="">Choose a doctor…</option>
+                {doctors.map(d => <option key={d.doctor_id} value={d.doctor_id}>{d.name} — {d.specialization}</option>)}
+              </select>
+            </Field>
+            <Field label="Appointment Date">
+              <Inp type="date" value={selDate} min={minDate} onChange={e => setSelDate(e.target.value)} disabled={!selDoctor} />
+            </Field>
+          </div>
+
+          {selDoctor && selDate && (
+            <Field label="Available Time Slots" hint="Select an available slot">
+              {slotsLoading ? <p style={{ color:'var(--c-muted)', fontSize:'.85rem' }}>Loading slots…</p>
+                : availSlots.length === 0 ? <p style={{ color:'#ef4444', fontSize:'.85rem' }}>No slots available on this date. Try another day.</p>
+                : (
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:4 }}>
+                    {availSlots.map(s => (
+                      <button key={s} onClick={() => setSelSlot(s)} style={{ padding:'8px 16px', borderRadius:50, border:`1.5px solid ${selSlot === s ? 'var(--c-teal)' : 'rgba(0,0,0,0.1)'}`, background: selSlot === s ? 'rgba(0,180,160,0.1)' : '#fff', color: selSlot === s ? 'var(--c-teal)' : 'var(--c-dark)', fontWeight:600, fontSize:'.82rem', cursor:'pointer', transition:'all .2s' }}>{s}</button>
+                    ))}
+                  </div>
+                )
+              }
+            </Field>
+          )}
+
+          <div style={{ marginTop:16 }}>
+            <Field label="Reason for visit (optional)">
+              <textarea className="inp" rows={2} style={{ resize:'none' }} value={reason} onChange={e => setReason(e.target.value)} placeholder="Brief description of your concern…" />
+            </Field>
+          </div>
+
+          <button className="btn" onClick={bookAppointment} disabled={loading || !selDoctor || !selDate || !selSlot} style={{ marginTop:18, padding:'13px 28px', justifyContent:'center', opacity: (!selDoctor || !selDate || !selSlot) ? .5 : 1, gap:8 }}>
+            {loading ? <><Spinner /> Booking…</> : 'Confirm Booking'}
+          </button>
+        </div>
+      )}
+
+      {/* Appointments list */}
+      <div className="card" style={{ padding:24 }}>
+        {appointments.length === 0 ? (
+          <div style={{ textAlign:'center', padding:'40px 0', color:'var(--c-muted)' }}>
+            <div style={{ fontSize:'2.5rem', marginBottom:10 }}>📅</div>
+            <p style={{ fontWeight:600 }}>No appointments yet</p>
+            <p style={{ fontSize:'.82rem', marginTop:4 }}>Book your first appointment above.</p>
+          </div>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            {appointments.map(a => (
+              <div key={a.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'16px 18px', background:'rgba(255,255,255,0.7)', borderRadius:16, border:'1px solid rgba(0,0,0,0.07)' }}>
+                <div style={{ width:46, height:46, borderRadius:14, background:'rgba(0,180,160,0.1)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.3rem', flexShrink:0 }}>🩺</div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <p style={{ fontWeight:700, fontSize:'.9rem' }}>{a.doctor_name}</p>
+                  <p style={{ fontSize:'.78rem', color:'var(--c-muted)', marginTop:2 }}>{new Date(a.date).toLocaleDateString('en-IN', { weekday:'short', day:'2-digit', month:'short', year:'numeric' })} · {a.time_slot}</p>
+                  {a.reason && <p style={{ fontSize:'.75rem', color:'var(--c-muted)', marginTop:2, fontStyle:'italic' }}>"{a.reason}"</p>}
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:8, flexShrink:0 }}>
+                  <span style={{ fontSize:'.72rem', fontWeight:700, color: statusColors[a.status] || '#94a3b8', background:`${statusColors[a.status]}15`, borderRadius:50, padding:'3px 10px', textTransform:'uppercase', letterSpacing:'.04em' }}>{a.status}</span>
+                  {(a.status === 'pending' || a.status === 'confirmed') && (
+                    <button onClick={() => cancelAppointment(a.id)} style={{ fontSize:'.72rem', color:'#ef4444', background:'none', border:'none', cursor:'pointer', fontWeight:600 }}>Cancel</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DOCTOR LOGIN — OTP flow
+════════════════════════════════════════════════════════════════ */
+function DoctorLogin({ onSuccess, onBack }) {
+  const [doctors,    setDoctors]    = useState([])
+  const [step,       setStep]       = useState(1)  // 1=select doctor+pid, 2=enter otp
+  const [doctorId,   setDoctorId]   = useState('')
+  const [pid,        setPid]        = useState('')
+  const [otp,        setOtp]        = useState('')
+  const [patientInfo, setPatientInfo] = useState(null)
+  const [loading,    setLoading]    = useState(false)
+  const [error,      setError]      = useState('')
+
+  useEffect(() => {
+    fetch(`${API}/doctors`).then(r => r.json()).then(d => setDoctors(d.data || [])).catch(()=>{})
+  }, [])
+
+  const requestOTP = async () => {
+    if (!doctorId || !pid.trim()) { setError('Please select your name and enter a patient PID.'); return }
+    setLoading(true); setError('')
+    try {
+      const res = await fetch(`${API}/doctors/otp/request`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ doctor_id: doctorId, pid: pid.trim().toUpperCase() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message)
+      setPatientInfo(data.data)
+      setStep(2)
+    } catch(e) { setError(e.message) }
+    finally { setLoading(false) }
+  }
+
+  const verifyOTP = async () => {
+    if (!otp.trim()) { setError('Please enter the OTP.'); return }
+    setLoading(true); setError('')
+    try {
+      const res = await fetch(`${API}/doctors/otp/verify`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ doctor_id: doctorId, pid: pid.trim().toUpperCase(), otp: otp.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message)
+      // Store doctor token separately
+      localStorage.setItem('cs_doctor_token', data.data.token)
+      onSuccess(data.data)
+    } catch(e) { setError(e.message) }
+    finally { setLoading(false) }
+  }
+
+  return (
+    <div style={{ minHeight:'100vh', background:'linear-gradient(145deg,#060d1f,#0a2428)', display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
+      <div style={{ width:'100%', maxWidth:460, background:'rgba(255,255,255,0.97)', borderRadius:28, overflow:'hidden', boxShadow:'0 40px 100px rgba(0,0,0,0.4)' }}>
+        <div style={{ background:'linear-gradient(135deg,#060d1f,#0a2428)', padding:'26px 30px 22px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
+            <Logo size={30} radius={8} />
+            <span style={{ color:'#fff', fontWeight:800, fontFamily:'var(--font-h)', fontSize:'1rem' }}>CareSync</span>
+          </div>
+          <p style={{ color:'rgba(255,255,255,0.5)', fontSize:'.8rem' }}>
+            {step === 1 ? 'Doctor Portal — Step 1 of 2: Identify yourself and patient' : 'Doctor Portal — Step 2 of 2: Enter OTP from patient'}
+          </p>
+        </div>
+        <div style={{ padding:'26px 30px 30px', display:'flex', flexDirection:'column', gap:16 }}>
+          {error && <Alert type="error">{error}</Alert>}
+
+          {step === 1 && (<>
+            <Field label="Your name">
+              <select className="inp" value={doctorId} onChange={e => setDoctorId(e.target.value)} style={{ background:'rgba(255,255,255,0.9)' }}>
+                <option value="">Select your name…</option>
+                {doctors.map(d => <option key={d.doctor_id} value={d.doctor_id}>{d.name} — {d.specialization}</option>)}
+              </select>
+            </Field>
+            <Field label="Patient ID (PID)" hint="Ask the patient for their PID, e.g. CS81234">
+              <Inp placeholder="CS81234" value={pid} onChange={e => { setPid(e.target.value.toUpperCase()); setError('') }} />
+            </Field>
+            <button className="btn" onClick={requestOTP} disabled={loading} style={{ padding:'14px', justifyContent:'center', fontSize:'1rem', gap:8, opacity: loading ? .7 : 1 }}>
+              {loading ? <><Spinner /> Sending OTP…</> : 'Send OTP to Patient →'}
+            </button>
+          </>)}
+
+          {step === 2 && (<>
+            <Alert type="info">
+              OTP sent to {patientInfo?.masked_phone}. Ask <strong>{patientInfo?.patient_name}</strong> to share the code with you.
+            </Alert>
+            <Field label="Enter OTP from patient">
+              <Inp placeholder="6-digit code" value={otp} onChange={e => { setOtp(e.target.value); setError('') }} maxLength={6} style={{ fontSize:'1.3rem', textAlign:'center', letterSpacing:'.2em' }} />
+            </Field>
+            <button className="btn" onClick={verifyOTP} disabled={loading} style={{ padding:'14px', justifyContent:'center', fontSize:'1rem', gap:8, opacity: loading ? .7 : 1 }}>
+              {loading ? <><Spinner /> Verifying…</> : 'Verify & Access Patient →'}
+            </button>
+            <button onClick={() => { setStep(1); setOtp(''); setError('') }} style={{ background:'none', border:'none', color:'var(--c-muted)', fontSize:'.82rem', cursor:'pointer', textAlign:'center' }}>← Back</button>
+          </>)}
+
+          <button onClick={onBack} style={{ background:'none', border:'none', color:'var(--c-muted)', fontSize:'.8rem', cursor:'pointer', textAlign:'center', marginTop:4 }}>← Patient login</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DOCTOR DASHBOARD
+════════════════════════════════════════════════════════════════ */
+function DoctorDashboard({ session, onLogout }) {
+  const [activeTab,   setActiveTab]   = useState('overview')
+  const [appointments, setAppointments] = useState([])
+  const [patientData, setPatientData] = useState(null)
+  const [diagnosis,   setDiagnosis]   = useState('')
+  const [prescription, setPrescription] = useState('')
+  const [followUp,    setFollowUp]    = useState('')
+  const [selAppt,     setSelAppt]     = useState(null)
+  const [saving,      setSaving]      = useState(false)
+  const [result,      setResult]      = useState(null)
+  const [pingMsg,     setPingMsg]     = useState('')
+  const [pinging,     setPinging]     = useState(false)
+
+  const { doctor, patient, token } = session || {}
+
+  const docFetch = async (path, opts = {}) => {
+    const res = await fetch(`${API}${path}`, {
+      ...opts,
+      headers: {
+        ...(!(opts.body instanceof FormData) && { 'Content-Type':'application/json' }),
+        Authorization: `Bearer ${token}`,
+        ...opts.headers,
+      },
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.message || 'Request failed')
+    return data
+  }
+
+  useEffect(() => {
+    fetchAppointments()
+    fetchPatientData()
+  }, [])
+
+  const fetchAppointments = async () => {
+    try { const d = await docFetch('/appointments/doctor'); setAppointments(d.data || []) } catch(e){}
+  }
+  const fetchPatientData = async () => {
+    try { const d = await docFetch(`/diagnoses/doctor/patient/${patient?.pid}`); setPatientData(d.data) } catch(e){}
+  }
+
+  const saveDiagnosis = async () => {
+    if (!diagnosis.trim()) return
+    setSaving(true); setResult(null)
+    try {
+      await docFetch('/diagnoses', { method:'POST', body: JSON.stringify({ pid: patient?.pid, appointment_id: selAppt?.id || null, diagnosis, prescription, follow_up_date: followUp || null }) })
+      setResult({ success:true, message:'Diagnosis saved successfully.' })
+      setDiagnosis(''); setPrescription(''); setFollowUp(''); setSelAppt(null)
+      fetchPatientData()
+    } catch(e) { setResult({ success:false, message:e.message }) }
+    finally { setSaving(false) }
+  }
+
+  const applyTag = async (tag) => {
+    try {
+      await docFetch('/diagnoses/tags', { method:'POST', body: JSON.stringify({ pid: patient?.pid, tag }) })
+      fetchPatientData()
+    } catch(e) { alert(e.message) }
+  }
+
+  const removeTag = async (id) => {
+    try { await docFetch(`/diagnoses/tags/${id}`, { method:'DELETE' }); fetchPatientData() } catch(e){}
+  }
+
+  const pingPatient = async () => {
+    setPinging(true)
+    try {
+      await docFetch('/diagnoses/ping', { method:'POST', body: JSON.stringify({ pid: patient?.pid, message: pingMsg || undefined }) })
+      setResult({ success:true, message:'Patient has been notified to upload files.' })
+      setPingMsg('')
+    } catch(e) { setResult({ success:false, message:e.message }) }
+    finally { setPinging(false) }
+  }
+
+  const updateApptStatus = async (id, status) => {
+    try { await docFetch(`/appointments/${id}/status`, { method:'PATCH', body: JSON.stringify({ status }) }); fetchAppointments() } catch(e){ alert(e.message) }
+  }
+
+  const TAGS = [
+    { value:'stable',         label:'Stable',          color:'#22c55e' },
+    { value:'follow-up',      label:'Follow-up',        color:'#3b82f6' },
+    { value:'monitoring',     label:'Monitoring',       color:'#f59e0b' },
+    { value:'critical',       label:'Critical',         color:'#f97316' },
+    { value:'terminally-ill', label:'Terminally Ill',   color:'#ef4444' },
+    { value:'recovered',      label:'Recovered',        color:'#00b4a0' },
+  ]
+
+  const statusColors = { pending:'#f59e0b', confirmed:'#22c55e', completed:'#6366f1', cancelled:'#ef4444' }
+  const TABS = [
+    { id:'overview',     label:'Patient',      icon:'👤' },
+    { id:'appointments', label:'Appointments', icon:'📅' },
+    { id:'files',        label:'Files',        icon:'📁' },
+    { id:'diagnosis',    label:'Diagnosis',    icon:'🩺' },
+  ]
+
+  return (
+    <div style={{ minHeight:'100vh', background:'var(--c-bg)', paddingTop:70 }}>
+      {/* Navbar */}
+      <nav style={{ position:'fixed', top:0, left:0, right:0, zIndex:100, background:'linear-gradient(135deg,#060d1f,#0a2428)', height:62 }}>
+        <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 24px', height:'100%', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <Logo size={30} radius={8} />
+            <div>
+              <p style={{ color:'#fff', fontWeight:700, fontFamily:'var(--font-h)', fontSize:'.9rem' }}>Doctor Portal</p>
+              <p style={{ color:'rgba(255,255,255,0.4)', fontSize:'.7rem' }}>{doctor?.name} · {doctor?.specialization}</p>
+            </div>
+          </div>
+          <div className="desktop-tabs" style={{ display:'flex', gap:4 }}>
+            {TABS.map(t => (
+              <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:50, border:'none', cursor:'pointer', fontFamily:'var(--font-b)', fontWeight:600, fontSize:'.8rem', transition:'all .2s', background: activeTab === t.id ? 'rgba(255,255,255,0.15)' : 'transparent', color: activeTab === t.id ? '#fff' : 'rgba(255,255,255,0.45)' }}>
+                <span>{t.icon}</span> {t.label}
+              </button>
+            ))}
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ background:'rgba(0,180,160,0.2)', border:'1px solid rgba(0,180,160,0.4)', borderRadius:10, padding:'5px 12px', textAlign:'right' }}>
+              <p style={{ color:'var(--c-cyan)', fontWeight:700, fontSize:'.75rem' }}>Accessing: {patient?.pid}</p>
+              <p style={{ color:'rgba(255,255,255,0.5)', fontSize:'.68rem' }}>{patient?.name} · 2hr session</p>
+            </div>
+            <button onClick={onLogout} style={{ background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:50, padding:'7px 16px', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:'.8rem', fontWeight:600 }}>End Session</button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile bottom nav */}
+      <nav className="mobile-nav">
+        <div className="mobile-nav-inner">
+          {TABS.map(t => (
+            <button key={t.id} className={`mobile-nav-btn${activeTab === t.id ? ' active' : ''}`} onClick={() => setActiveTab(t.id)}>
+              <span>{t.icon}</span>
+              <span style={{ color: activeTab === t.id ? 'var(--c-teal)' : 'var(--c-muted)' }}>{t.label}</span>
+            </button>
+          ))}
+          <button className="mobile-nav-btn" onClick={onLogout}><span>🚪</span><span style={{ color:'var(--c-muted)' }}>End</span></button>
+        </div>
+      </nav>
+
+      <div className="dashboard-content" style={{ maxWidth:1100, margin:'0 auto', padding:'24px 24px 80px' }}>
+        {result && <div style={{ marginBottom:16 }}><Alert type={result.success ? 'success' : 'error'}>{result.message}</Alert></div>}
+
+        {/* ── OVERVIEW TAB ── */}
+        {activeTab === 'overview' && (
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:22 }}>
+            {/* Patient summary */}
+            <div className="card" style={{ padding:28 }}>
+              <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem', marginBottom:20 }}>Patient Profile</h2>
+              <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20, paddingBottom:16, borderBottom:'1px solid rgba(0,0,0,0.06)' }}>
+                <div style={{ width:52, height:52, borderRadius:16, background:'linear-gradient(135deg,#00b4a0,#00d4c8)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:'1.1rem' }}>
+                  {(patient?.name || 'P').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+                </div>
+                <div>
+                  <p style={{ fontWeight:700, fontFamily:'var(--font-h)', fontSize:'.95rem' }}>{patient?.name}</p>
+                  <p style={{ fontSize:'.75rem', color:'var(--c-muted)', marginTop:2 }}>PID: {patient?.pid}</p>
+                </div>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {[['DOB', fmtDate(patient?.dob)],['Gender',patient?.gender||'—'],['Blood Type',patient?.blood_type||'—'],['Weight',patient?.weight_kg?`${patient.weight_kg} kg`:'—'],['Height',patient?.height_cm?`${patient.height_cm} cm`:'—'],['BMI',patient?.bmi||'—']].map(([k,v])=>(
+                  <div key={k} style={{ display:'flex', justifyContent:'space-between' }}>
+                    <span style={{ fontSize:'.78rem', color:'var(--c-muted)' }}>{k}</span>
+                    <span style={{ fontSize:'.8rem', fontWeight:600 }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
+              <div className="card" style={{ padding:24 }}>
+                <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1rem', marginBottom:16 }}>Patient Tags</h2>
+                {/* Current tags */}
+                {patientData?.tags?.length > 0 && (
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:14 }}>
+                    {patientData.tags.map(t => {
+                      const cfg = TAGS.find(tg => tg.value === t.tag) || {}
+                      return (
+                        <div key={t.id} style={{ display:'flex', alignItems:'center', gap:6, background:`${cfg.color}15`, border:`1px solid ${cfg.color}30`, borderRadius:50, padding:'5px 12px' }}>
+                          <span style={{ fontSize:'.75rem', fontWeight:700, color:cfg.color }}>{cfg.label}</span>
+                          <button onClick={() => removeTag(t.id)} style={{ background:'none', border:'none', cursor:'pointer', color:cfg.color, fontSize:'.75rem', padding:0, lineHeight:1 }}>×</button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                  {TAGS.map(t => (
+                    <button key={t.value} onClick={() => applyTag(t.value)} style={{ padding:'6px 14px', borderRadius:50, border:`1.5px solid ${t.color}40`, background:'transparent', color:t.color, fontWeight:600, fontSize:'.75rem', cursor:'pointer', transition:'all .2s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = `${t.color}12`}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                      + {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Ping patient */}
+              <div className="card" style={{ padding:24 }}>
+                <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1rem', marginBottom:14 }}>Request Files from Patient</h2>
+                <textarea className="inp" rows={2} style={{ resize:'none', fontSize:'.85rem', marginBottom:12 }} placeholder="Custom message (optional)…" value={pingMsg} onChange={e => setPingMsg(e.target.value)} />
+                <button className="btn" onClick={pingPatient} disabled={pinging} style={{ width:'100%', justifyContent:'center', padding:'11px', gap:8, opacity: pinging?.7:1 }}>
+                  {pinging ? <><Spinner /> Sending…</> : '🔔 Ping Patient'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── APPOINTMENTS TAB ── */}
+        {activeTab === 'appointments' && (
+          <div>
+            <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.5rem', marginBottom:20 }}>Scheduled Appointments</h1>
+            <div className="card" style={{ padding:24 }}>
+              {appointments.length === 0 ? (
+                <div style={{ textAlign:'center', padding:'40px 0', color:'var(--c-muted)' }}>
+                  <div style={{ fontSize:'2.5rem', marginBottom:10 }}>📅</div>
+                  <p style={{ fontWeight:600 }}>No appointments scheduled</p>
+                </div>
+              ) : (
+                <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                  {appointments.map(a => (
+                    <div key={a.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'16px 18px', background:'rgba(255,255,255,0.7)', borderRadius:16, border:'1px solid rgba(0,0,0,0.07)' }}>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <p style={{ fontWeight:700, fontSize:'.9rem' }}>{a.pid} — {a.doctor_name}</p>
+                        <p style={{ fontSize:'.78rem', color:'var(--c-muted)', marginTop:2 }}>{new Date(a.date).toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'})} · {a.time_slot}</p>
+                        {a.reason && <p style={{ fontSize:'.75rem', color:'var(--c-muted)', marginTop:2, fontStyle:'italic' }}>"{a.reason}"</p>}
+                      </div>
+                      <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+                        <span style={{ fontSize:'.72rem', fontWeight:700, color:statusColors[a.status], background:`${statusColors[a.status]}15`, borderRadius:50, padding:'3px 10px', textTransform:'uppercase' }}>{a.status}</span>
+                        {a.status === 'pending' && <button onClick={() => updateApptStatus(a.id,'confirmed')} style={{ padding:'5px 12px', borderRadius:50, background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', color:'#16a34a', fontSize:'.75rem', fontWeight:600, cursor:'pointer' }}>Confirm</button>}
+                        {a.status === 'confirmed' && <button onClick={() => updateApptStatus(a.id,'completed')} style={{ padding:'5px 12px', borderRadius:50, background:'rgba(99,102,241,0.1)', border:'1px solid rgba(99,102,241,0.3)', color:'#6366f1', fontSize:'.75rem', fontWeight:600, cursor:'pointer' }}>Mark Done</button>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── FILES TAB ── */}
+        {activeTab === 'files' && (
+          <div>
+            <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.5rem', marginBottom:20 }}>Patient Files</h1>
+            <div className="card" style={{ padding:24 }}>
+              {!patientData?.files?.length ? (
+                <div style={{ textAlign:'center', padding:'40px 0', color:'var(--c-muted)' }}>
+                  <div style={{ fontSize:'2.5rem', marginBottom:10 }}>📭</div>
+                  <p style={{ fontWeight:600 }}>No files uploaded yet</p>
+                </div>
+              ) : (
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  {patientData.files.map(f => {
+                    const ft = FILE_TYPES.find(t => t.value === f.file_type) || FILE_TYPES[3]
+                    return (
+                      <div key={f.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', background:'rgba(255,255,255,0.7)', borderRadius:16, border:'1px solid rgba(0,0,0,0.07)' }}>
+                        <div style={{ width:42, height:42, borderRadius:12, background:`${ft.color}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.2rem', flexShrink:0 }}>{ft.icon}</div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <p style={{ fontWeight:600, fontSize:'.88rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.file_name}</p>
+                          <div style={{ display:'flex', gap:8, marginTop:3 }}>
+                            <span style={{ fontSize:'.7rem', fontWeight:600, color:ft.color, background:`${ft.color}12`, borderRadius:50, padding:'2px 8px' }}>{ft.label}</span>
+                            <span style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>{fmtBytes(f.file_size)}</span>
+                            <span style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>{fmtDate(f.upload_date)}</span>
+                          </div>
+                        </div>
+                        {f.file_url && (
+                          <a href={f.file_url} target="_blank" rel="noreferrer" style={{ width:34, height:34, borderRadius:10, background:'rgba(0,180,160,0.1)', display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', fontSize:'.85rem' }}>👁</a>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── DIAGNOSIS TAB ── */}
+        {activeTab === 'diagnosis' && (
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:22 }}>
+            {/* Add diagnosis */}
+            <div className="card" style={{ padding:28 }}>
+              <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem', marginBottom:20 }}>Add Diagnosis</h2>
+              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                <Field label="Link to appointment (optional)">
+                  <select className="inp" value={selAppt?.id || ''} onChange={e => setSelAppt(appointments.find(a => a.id === e.target.value) || null)} style={{ background:'rgba(255,255,255,0.9)' }}>
+                    <option value="">No appointment linked</option>
+                    {appointments.filter(a => a.status !== 'cancelled').map(a => (
+                      <option key={a.id} value={a.id}>{new Date(a.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})} · {a.time_slot} · {a.status}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Diagnosis *">
+                  <textarea className="inp" rows={4} style={{ resize:'none' }} placeholder="Clinical findings and diagnosis…" value={diagnosis} onChange={e => setDiagnosis(e.target.value)} />
+                </Field>
+                <Field label="Prescription / Treatment">
+                  <textarea className="inp" rows={3} style={{ resize:'none' }} placeholder="Medications, dosage, instructions…" value={prescription} onChange={e => setPrescription(e.target.value)} />
+                </Field>
+                <Field label="Follow-up date">
+                  <Inp type="date" value={followUp} onChange={e => setFollowUp(e.target.value)} />
+                </Field>
+                <button className="btn" onClick={saveDiagnosis} disabled={saving || !diagnosis.trim()} style={{ justifyContent:'center', padding:'13px', gap:8, opacity: (!diagnosis.trim()||saving) ? .5 : 1 }}>
+                  {saving ? <><Spinner /> Saving…</> : 'Save Diagnosis'}
+                </button>
+              </div>
+            </div>
+
+            {/* Previous diagnoses */}
+            <div className="card" style={{ padding:28 }}>
+              <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem', marginBottom:20 }}>Previous Diagnoses</h2>
+              {!patientData?.diagnoses?.length ? (
+                <div style={{ textAlign:'center', padding:'30px 0', color:'var(--c-muted)' }}>
+                  <p style={{ fontSize:'2rem', marginBottom:8 }}>📋</p>
+                  <p style={{ fontWeight:600 }}>No diagnoses yet</p>
+                </div>
+              ) : (
+                <div style={{ display:'flex', flexDirection:'column', gap:12, maxHeight:500, overflowY:'auto' }}>
+                  {patientData.diagnoses.map(d => (
+                    <div key={d.id} style={{ padding:'14px 16px', background:'rgba(0,0,0,0.03)', borderRadius:14, border:'1px solid rgba(0,0,0,0.06)' }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+                        <span style={{ fontWeight:700, fontSize:'.8rem', color:'var(--c-teal)' }}>{d.doctor_name}</span>
+                        <span style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>{fmtDate(d.created_at)}</span>
+                      </div>
+                      <p style={{ fontSize:'.85rem', lineHeight:1.6, marginBottom:d.prescription?8:0 }}>{d.diagnosis}</p>
+                      {d.prescription && <p style={{ fontSize:'.78rem', color:'#6366f1', fontStyle:'italic' }}>Rx: {d.prescription}</p>}
+                      {d.follow_up_date && <p style={{ fontSize:'.75rem', color:'var(--c-muted)', marginTop:4 }}>Follow-up: {fmtDate(d.follow_up_date)}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 /* ════════════════════════════════════════════════════════════════
    ROOT — Session persistence + routing
 ════════════════════════════════════════════════════════════════ */
 export default function App() {
-  const [view,     setView]     = useState('landing')
-  const [patient,  setPatient]  = useState(null)
-  const [authOpen, setAuthOpen] = useState(false)
-  const [booting,  setBooting]  = useState(true)
+  const [view,        setView]       = useState('landing')  // 'landing' | 'dashboard' | 'doctor'
+  const [patient,     setPatient]    = useState(null)
+  const [doctorSession, setDoctorSession] = useState(null)  // { token, doctor, patient }
+  const [authOpen,    setAuthOpen]   = useState(false)
+  const [booting,     setBooting]    = useState(true)
 
-  // Restore session from localStorage on mount
   useEffect(() => {
-    const token   = getToken()
-    const cached  = storage.get(PATIENT_KEY)
+    const token  = getToken()
+    const cached = storage.get(PATIENT_KEY)
     if (token && cached) {
       setPatient(cached)
       setView('dashboard')
-      // Verify token is still valid in background
       authFetch('/auth/me')
         .then(d => { setPatient(d.data); storage.set(PATIENT_KEY, d.data) })
         .catch(() => { clearAuth(); setView('landing') })
@@ -1025,17 +1689,10 @@ export default function App() {
     setBooting(false)
   }, [])
 
-  const handleAuthSuccess = (p) => {
-    setPatient(p)
-    setAuthOpen(false)
-    setView('dashboard')
-  }
-
-  const handleLogout = () => {
-    clearAuth()
-    setPatient(null)
-    setView('landing')
-  }
+  const handleAuthSuccess = (p) => { setPatient(p); setAuthOpen(false); setView('dashboard') }
+  const handleLogout      = () => { clearAuth(); setPatient(null); setView('landing') }
+  const handleDoctorLogin = (session) => { setDoctorSession(session); setView('doctor') }
+  const handleDoctorLogout = () => { setDoctorSession(null); setView('landing') }
 
   if (booting) return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--c-bg)' }}>
@@ -1045,10 +1702,10 @@ export default function App() {
 
   return (
     <>
-      {view === 'dashboard'
-        ? <Dashboard patient={patient} onLogout={handleLogout} />
-        : <Landing onOpenAuth={() => setAuthOpen(true)} />
-      }
+      {view === 'dashboard' && <Dashboard patient={patient} onLogout={handleLogout} />}
+      {view === 'doctor'    && <DoctorDashboard session={doctorSession} onLogout={handleDoctorLogout} />}
+      {view === 'landing'   && <Landing onOpenAuth={() => setAuthOpen(true)} onDoctorPortal={() => setView('doctor-login')} />}
+      {view === 'doctor-login' && <DoctorLogin onSuccess={handleDoctorLogin} onBack={() => setView('landing')} />}
       {authOpen && <AuthModal onSuccess={handleAuthSuccess} onClose={() => setAuthOpen(false)} />}
     </>
   )
