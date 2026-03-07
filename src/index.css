@@ -344,3 +344,8 @@ h1,h2,h3,h4,h5 { font-family: var(--font-h); }
     font-size: .82rem !important;
   }
 }
+
+/* Mobile only — hidden on desktop */
+@media (max-width: 768px) {
+  .mobile-only { display: flex !important; }
+}
