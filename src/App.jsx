@@ -1368,7 +1368,13 @@ function DoctorDashboard({ session, onLogout }) {
     try { const d = await docFetch('/appointments/doctor'); setAppointments(d.data || []) } catch(e){}
   }
   const fetchPatientData = async () => {
-    try { const d = await docFetch(`/diagnoses/doctor/patient/${patient?.pid}`); setPatientData(d.data) } catch(e){}
+    try {
+      const d = await docFetch(`/diagnoses/doctor/patient/${patient?.pid}`)
+      setPatientData(d.data)
+    } catch(e) {
+      console.error('fetchPatientData error:', e.message)
+      setResult({ success:false, message:`Could not load patient data: ${e.message}` })
+    }
   }
 
   const saveDiagnosis = async () => {
