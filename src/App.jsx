@@ -605,7 +605,7 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
    AI CHATBOT PANEL
 ════════════════════════════════════════════════════════════════ */
 function ChatBot({ patient, onClose }) {
-  const [msgs,   setMsgs]   = useState([{ role:'ai', text:"Hi! I'm your CareSync AI. Ask me anything about your health, medications, or appointments." }])
+  const [msgs,   setMsgs]   = useState([{ role:'ai', text:"Hi! I'm CareSync AI, your clinical assistant. Describe your symptoms and I'll help you understand them and suggest the right doctor.", doctor:null }])
   const [inp,    setInp]    = useState('')
   const [typing, setTyping] = useState(false)
   const [sessId, setSessId] = useState(null)
@@ -614,70 +614,124 @@ function ChatBot({ patient, onClose }) {
   useEffect(() => { endRef.current?.scrollIntoView({ behavior:'smooth' }) }, [msgs, typing])
 
   const send = async () => {
-    if (!inp.trim()) return
+    if (!inp.trim() || typing) return
     const txt = inp.trim()
-    setMsgs(m => [...m, { role:'user', text:txt }])
+    setMsgs(m => [...m, { role:'user', text:txt, doctor:null }])
     setInp(''); setTyping(true)
-
     try {
       const data = await authFetch('/chat/message', {
         method: 'POST',
         body: JSON.stringify({ message:txt, session_id: sessId }),
       })
       setSessId(data.data.session_id)
-      setMsgs(m => [...m, { role:'ai', text:data.data.reply }])
+      setMsgs(m => [...m, { role:'ai', text:data.data.reply, doctor:data.data.doctor || null }])
     } catch (e) {
-      setMsgs(m => [...m, { role:'ai', text:'Sorry, I had trouble responding. Please try again.' }])
+      setMsgs(m => [...m, { role:'ai', text:'Sorry, I had trouble responding. Please try again.', doctor:null }])
     } finally { setTyping(false) }
   }
+
+  // Quick suggestion chips
+  const chips = ['I have chest pain', 'Frequent headaches', 'Breathing difficulty', 'Joint pain', 'High blood sugar', 'Persistent fever']
 
   return (
     <div className="chat-wrapper" style={{ position:'fixed', inset:0, zIndex:200, display:'flex', alignItems:'flex-end', justifyContent:'flex-end', padding:'24px' }}>
       <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(9,14,26,0.35)', backdropFilter:'blur(6px)' }} />
-      <div className="chat-panel" style={{ position:'relative', width:'100%', maxWidth:420, height:640, maxHeight:'90vh', borderRadius:28, overflow:'hidden', display:'flex', flexDirection:'column', background:'rgba(255,255,255,0.9)', backdropFilter:'blur(40px)', border:'1px solid rgba(255,255,255,0.65)', boxShadow:'0 32px 80px rgba(0,0,0,0.18)' }}>
-        {/* header */}
-        <div style={{ background:'linear-gradient(135deg,#060d1f,#0a2428)', padding:'18px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+      <div className="chat-panel" style={{ position:'relative', width:'100%', maxWidth:440, height:680, maxHeight:'92vh', borderRadius:28, overflow:'hidden', display:'flex', flexDirection:'column', background:'rgba(255,255,255,0.95)', backdropFilter:'blur(40px)', border:'1px solid rgba(255,255,255,0.65)', boxShadow:'0 32px 80px rgba(0,0,0,0.2)' }}>
+
+        {/* Header */}
+        <div style={{ background:'linear-gradient(135deg,#060d1f,#0a2428)', padding:'16px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <div style={{ width:40, height:40, borderRadius:13, background:'rgba(0,180,160,0.2)', border:'1px solid rgba(0,180,160,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem' }}>✦</div>
             <div>
               <p style={{ color:'#fff', fontWeight:700, fontFamily:'var(--font-h)', fontSize:'.9rem' }}>CareSync AI</p>
               <div style={{ display:'flex', alignItems:'center', gap:5, marginTop:2 }}>
-                <div style={{ width:6, height:6, borderRadius:'50%', background:'#22c55e', boxShadow:'0 0 6px #22c55e', animation:'pulse 2s infinite' }} />
-                <p style={{ color:'rgba(255,255,255,0.4)', fontSize:'.7rem' }}>Online · Clinical Assistant</p>
+                <div style={{ width:6, height:6, borderRadius:'50%', background:'#22c55e', boxShadow:'0 0 6px #22c55e' }} />
+                <p style={{ color:'rgba(255,255,255,0.4)', fontSize:'.68rem' }}>Online · Clinical Assistant</p>
               </div>
             </div>
           </div>
           <button onClick={onClose} style={{ width:30, height:30, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'none', color:'rgba(255,255,255,0.6)', cursor:'pointer', fontSize:'1.1rem', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
         </div>
-        {/* messages */}
-        <div style={{ flex:1, overflowY:'auto', padding:'18px 14px', display:'flex', flexDirection:'column', gap:10 }}>
+
+        {/* Messages */}
+        <div style={{ flex:1, overflowY:'auto', padding:'16px 14px', display:'flex', flexDirection:'column', gap:10 }}>
+
+          {/* Quick chips — only shown when just the welcome message exists */}
+          {msgs.length === 1 && (
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:4 }}>
+              {chips.map(c => (
+                <button key={c} onClick={() => { setInp(c); }} style={{ padding:'6px 12px', borderRadius:50, border:'1.5px solid rgba(0,180,160,0.3)', background:'rgba(0,180,160,0.06)', color:'var(--c-teal-dim)', fontSize:'.75rem', fontWeight:600, cursor:'pointer', fontFamily:'var(--font-b)' }}>{c}</button>
+              ))}
+            </div>
+          )}
+
           {msgs.map((m, i) => (
-            <div key={i} style={{ display:'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start', alignItems:'flex-end', gap:7 }}>
-              {m.role === 'ai' && <div style={{ width:26, height:26, borderRadius:8, background:'linear-gradient(135deg,#00b4a0,#00d4c8)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'.6rem', fontWeight:800, flexShrink:0 }}>AI</div>}
-              <div style={{ maxWidth:'78%', padding:'10px 14px', borderRadius:16, fontSize:'.86rem', lineHeight:1.6, ...(m.role === 'user' ? { background:'linear-gradient(135deg,#00b4a0,#00d4c8)', color:'#fff', borderBottomRightRadius:4 } : { background:'#fff', color:'var(--c-dark)', border:'1px solid rgba(0,0,0,0.07)', borderBottomLeftRadius:4, boxShadow:'0 2px 10px rgba(0,0,0,0.05)' }) }}>
-                {m.text}
+            <div key={i}>
+              {/* Message bubble */}
+              <div style={{ display:'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start', alignItems:'flex-end', gap:7 }}>
+                {m.role === 'ai' && (
+                  <div style={{ width:26, height:26, borderRadius:8, background:'linear-gradient(135deg,#00b4a0,#00d4c8)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'.6rem', fontWeight:800, flexShrink:0 }}>AI</div>
+                )}
+                <div style={{ maxWidth:'80%', padding:'10px 14px', borderRadius:16, fontSize:'.84rem', lineHeight:1.65, whiteSpace:'pre-line', ...(m.role === 'user'
+                  ? { background:'linear-gradient(135deg,#00b4a0,#00d4c8)', color:'#fff', borderBottomRightRadius:4 }
+                  : { background:'#fff', color:'var(--c-dark)', border:'1px solid rgba(0,0,0,0.07)', borderBottomLeftRadius:4, boxShadow:'0 2px 10px rgba(0,0,0,0.05)' }
+                )}}>
+                  {m.text}
+                </div>
               </div>
+
+              {/* Doctor suggestion card */}
+              {m.role === 'ai' && m.doctor && (
+                <div style={{ marginTop:8, marginLeft:33, padding:'12px 14px', borderRadius:14, background:'linear-gradient(135deg,rgba(0,180,160,0.08),rgba(0,212,200,0.05))', border:'1.5px solid rgba(0,180,160,0.25)' }}>
+                  <p style={{ fontSize:'.72rem', color:'var(--c-muted)', marginBottom:6, fontWeight:600 }}>SUGGESTED SPECIALIST</p>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <div style={{ width:38, height:38, borderRadius:12, background:'linear-gradient(135deg,#00b4a0,#00897b)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:'.8rem', flexShrink:0 }}>
+                      {m.doctor.name.split(' ').slice(-1)[0][0]}
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <p style={{ fontWeight:700, fontSize:'.84rem', color:'var(--c-dark)' }}>{m.doctor.name}</p>
+                      <p style={{ fontSize:'.74rem', color:'var(--c-muted)' }}>{m.doctor.spec}</p>
+                    </div>
+                    <button
+                      className="btn"
+                      style={{ padding:'6px 14px', fontSize:'.75rem', borderRadius:50 }}
+                      onClick={() => { onClose(); }}
+                    >
+                      Book →
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
+
+          {/* Typing indicator */}
           {typing && (
             <div style={{ display:'flex', alignItems:'flex-end', gap:7 }}>
               <div style={{ width:26, height:26, borderRadius:8, background:'linear-gradient(135deg,#00b4a0,#00d4c8)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'.6rem', fontWeight:800, flexShrink:0 }}>AI</div>
               <div style={{ background:'#fff', border:'1px solid rgba(0,0,0,0.07)', borderRadius:16, borderBottomLeftRadius:4, padding:'12px 16px', display:'flex', gap:5, alignItems:'center' }}>
-                {[0,1,2].map(i => <div key={i} className={`d${i+1}`} style={{ width:6, height:6, borderRadius:'50%', background:'var(--c-teal)' }} />)}
+                {[0,1,2].map(j => <div key={j} className={`d${j+1}`} style={{ width:6, height:6, borderRadius:'50%', background:'var(--c-teal)' }} />)}
               </div>
             </div>
           )}
           <div ref={endRef} />
         </div>
-        {/* input */}
-        <div style={{ padding:'14px', borderTop:'1px solid rgba(0,0,0,0.06)', flexShrink:0, background:'rgba(255,255,255,0.6)' }}>
-          <div style={{ display:'flex', gap:8, alignItems:'center', background:'rgba(255,255,255,0.9)', borderRadius:50, border:'1.5px solid rgba(0,0,0,0.08)', padding:'7px 7px 7px 18px' }}>
-            <input style={{ flex:1, border:'none', outline:'none', background:'transparent', fontFamily:'var(--font-b)', fontSize:'.86rem', color:'var(--c-dark)' }} placeholder="Ask about your health…" value={inp} onChange={e => setInp(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} />
-            <button className="btn" onClick={send} style={{ width:36, height:36, padding:0, borderRadius:50, justifyContent:'center', flexShrink:0 }}>
+
+        {/* Input */}
+        <div style={{ padding:'12px 14px', borderTop:'1px solid rgba(0,0,0,0.06)', flexShrink:0, background:'rgba(255,255,255,0.8)' }}>
+          <div style={{ display:'flex', gap:8, alignItems:'center', background:'rgba(255,255,255,0.95)', borderRadius:50, border:'1.5px solid rgba(0,0,0,0.08)', padding:'7px 7px 7px 18px' }}>
+            <input
+              style={{ flex:1, border:'none', outline:'none', background:'transparent', fontFamily:'var(--font-b)', fontSize:'.86rem', color:'var(--c-dark)' }}
+              placeholder="Describe your symptoms…"
+              value={inp}
+              onChange={e => setInp(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && send()}
+            />
+            <button className="btn" onClick={send} disabled={typing} style={{ width:36, height:36, padding:0, borderRadius:50, justifyContent:'center', flexShrink:0, opacity: typing ? 0.5 : 1 }}>
               <svg viewBox="0 0 20 20" fill="currentColor" style={{ width:14, height:14 }}><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
             </button>
           </div>
-          <p style={{ textAlign:'center', fontSize:'.66rem', color:'rgba(0,0,0,0.25)', marginTop:7 }}>CareSync AI · For informational purposes only</p>
+          <p style={{ textAlign:'center', fontSize:'.64rem', color:'rgba(0,0,0,0.22)', marginTop:6 }}>CareSync AI · For informational purposes only · Not a substitute for medical advice</p>
         </div>
       </div>
     </div>
@@ -1070,11 +1124,16 @@ function AppointmentsTab({ patient }) {
   const [slotsLoading,  setSlotsLoading]  = useState(false)
   const [result,        setResult]        = useState(null)
   const [pings,         setPings]         = useState([])
+  const [otpNotification, setOtpNotification] = useState(null)
 
   useEffect(() => {
     fetchDoctors()
     fetchAppointments()
     fetchPings()
+    fetchOTPNotification()
+    // Poll for OTP notification every 5 seconds
+    const interval = setInterval(fetchOTPNotification, 5000)
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
@@ -1089,6 +1148,12 @@ function AppointmentsTab({ patient }) {
   }
   const fetchPings = async () => {
     try { const d = await authFetch('/diagnoses/pings/mine'); setPings(d.data || []) } catch(e){}
+  }
+  const fetchOTPNotification = async () => {
+    try {
+      const d = await authFetch('/appointments/otp-notification')
+      if (d.data?.plain_otp) setOtpNotification(d.data)
+    } catch(e){}
   }
   const fetchSlots = async () => {
     setSlotsLoading(true); setSelSlot('')
@@ -1122,6 +1187,24 @@ function AppointmentsTab({ patient }) {
 
   return (
     <div style={{ maxWidth:900, margin:'0 auto' }}>
+
+      {/* OTP notification — in-app delivery when SMS not available */}
+      {otpNotification && (
+        <div style={{ marginBottom:16, padding:'18px 20px', background:'linear-gradient(135deg,rgba(0,180,160,0.12),rgba(0,212,200,0.08))', border:'2px solid rgba(0,180,160,0.35)', borderRadius:18 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
+            <span style={{ fontSize:'1.4rem' }}>🔐</span>
+            <p style={{ fontWeight:700, fontSize:'.92rem', color:'var(--c-teal-dim)' }}>Doctor Access Code</p>
+          </div>
+          <p style={{ fontSize:'.82rem', color:'var(--c-muted)', marginBottom:10 }}>A doctor is requesting access to your records. Share this code with them verbally:</p>
+          <div style={{ background:'#fff', borderRadius:14, padding:'16px', textAlign:'center', border:'1px solid rgba(0,180,160,0.2)', marginBottom:12 }}>
+            <p style={{ fontFamily:'var(--font-h)', fontWeight:900, fontSize:'2.2rem', letterSpacing:'.25em', color:'var(--c-dark)' }}>{otpNotification.plain_otp}</p>
+            <p style={{ fontSize:'.72rem', color:'var(--c-muted)', marginTop:4 }}>Valid for 10 minutes · Do not share with anyone else</p>
+          </div>
+          <button onClick={() => setOtpNotification(null)} style={{ width:'100%', padding:'10px', borderRadius:50, background:'rgba(0,180,160,0.1)', border:'1px solid rgba(0,180,160,0.2)', color:'var(--c-teal-dim)', fontWeight:600, fontSize:'.82rem', cursor:'pointer' }}>
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Doctor pings */}
       {pings.length > 0 && (
