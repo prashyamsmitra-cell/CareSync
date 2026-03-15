@@ -613,13 +613,7 @@ function ChatBot({ patient, onClose }) {
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior:'smooth' }) }, [msgs, typing])
 
-  // Wake up Render service as soon as chat opens
-  useEffect(() => {
-    authFetch('/chat/message', {
-      method: 'POST',
-      body: JSON.stringify({ message: 'hello', session_id: null }),
-    }).then(d => { setSessId(d.data.session_id) }).catch(() => {})
-  }, [])
+
 
   const send = async () => {
     if (!inp.trim() || typing) return
