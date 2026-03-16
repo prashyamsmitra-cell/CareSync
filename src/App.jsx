@@ -604,7 +604,7 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
 /* ════════════════════════════════════════════════════════════════
    AI CHATBOT PANEL
 ════════════════════════════════════════════════════════════════ */
-function ChatBot({ patient, onClose }) {
+function ChatBot({ patient, onClose, onNavigate }) {
   const [msgs,   setMsgs]   = useState([{ role:'ai', text:"Hi! I'm CareSync AI, your clinical assistant. Describe your symptoms and I'll help you understand them and suggest the right doctor.", doctor:null }])
   const [inp,    setInp]    = useState('')
   const [typing, setTyping] = useState(false)
@@ -626,7 +626,12 @@ function ChatBot({ patient, onClose }) {
         body: JSON.stringify({ message:txt, session_id: sessId }),
       })
       setSessId(data.data.session_id)
-      setMsgs(m => [...m, { role:'ai', text:data.data.reply, doctor:data.data.doctor || null }])
+      const { reply, doctor, redirect } = data.data
+      setMsgs(m => [...m, { role:'ai', text:reply, doctor: doctor || null, redirect: redirect || null }])
+      // Auto-navigate if chatbot suggests a tab
+      if (redirect && onNavigate) {
+        setTimeout(() => onNavigate(redirect), 800)
+      }
     } catch (e) {
       setMsgs(m => [...m, { role:'ai', text:'Sorry, I had trouble responding. Please try again.', doctor:null }])
     } finally { setTyping(false) }
@@ -681,6 +686,18 @@ function ChatBot({ patient, onClose }) {
                   {m.text}
                 </div>
               </div>
+
+              {/* Navigation redirect hint */}
+              {m.role === 'ai' && m.redirect && !m.doctor && (
+                <div style={{ marginTop:8, marginLeft:33 }}>
+                  <button
+                    onClick={() => { if(onNavigate) onNavigate(m.redirect); onClose(); }}
+                    style={{ padding:'8px 18px', borderRadius:50, background:'linear-gradient(135deg,#00b4a0,#00897b)', border:'none', color:'#fff', fontWeight:700, fontSize:'.78rem', cursor:'pointer', fontFamily:'var(--font-b)' }}
+                  >
+                    Go to {m.redirect.charAt(0).toUpperCase() + m.redirect.slice(1)} →
+                  </button>
+                </div>
+              )}
 
               {/* Doctor suggestion card */}
               {m.role === 'ai' && m.doctor && (
@@ -995,7 +1012,7 @@ function Dashboard({ patient, onLogout }) {
       {/* FAB */}
       <button className="btn fab-btn" onClick={() => setChat(true)} style={{ position:'fixed', bottom:32, right:32, width:56, height:56, borderRadius:18, fontSize:'1.3rem', padding:0, justifyContent:'center', boxShadow:'0 10px 30px rgba(0,180,160,0.4)', zIndex:50, animation:'glow 3s ease-in-out infinite' }} title="AI Assistant">✦</button>
 
-      {chat && <ChatBot patient={patient} onClose={() => setChat(false)} />}
+      {chat && <ChatBot patient={patient} onClose={() => setChat(false)} onNavigate={(tab) => { setActiveTab(tab); setChat(false); }} />}
     </div>
   )
 }
