@@ -901,30 +901,40 @@ function Dashboard({ patient, onLogout }) {
                   </div>
                 </div>
 
-                {/* Vital signs — set by doctor only */}
+                {/* Vital signs — real values from DB */}
                 <div className="card" style={{ padding:28 }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
                     <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem' }}>Vital Signs</h2>
-                    <span style={{ background:'rgba(148,163,184,0.12)', color:'#64748b', fontWeight:700, fontSize:'.7rem', padding:'4px 12px', borderRadius:50, border:'1px solid rgba(148,163,184,0.25)' }}>SET BY DOCTOR</span>
+                    {patient?.vitals_updated_at
+                      ? <span style={{ background:'rgba(34,197,94,0.1)', color:'#16a34a', fontWeight:700, fontSize:'.7rem', padding:'4px 12px', borderRadius:50, border:'1px solid rgba(34,197,94,0.2)' }}>UPDATED</span>
+                      : <span style={{ background:'rgba(148,163,184,0.12)', color:'#64748b', fontWeight:700, fontSize:'.7rem', padding:'4px 12px', borderRadius:50, border:'1px solid rgba(148,163,184,0.25)' }}>SET BY DOCTOR</span>
+                    }
                   </div>
                   <div className="vitals-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
                     {[
-                      { label:'Heart Rate',     unit:'bpm',  icon:'♥', color:'#f43f5e' },
-                      { label:'Blood Pressure', unit:'mmHg', icon:'◎', color:'#6366f1' },
-                      { label:'SpO₂',           unit:'%',    icon:'◉', color:'#3b82f6' },
-                      { label:'Temperature',    unit:'°F',   icon:'◈', color:'#f59e0b' },
+                      { label:'Heart Rate',     unit:'bpm',  icon:'♥', color:'#f43f5e', val: patient?.heart_rate     },
+                      { label:'Blood Pressure', unit:'mmHg', icon:'◎', color:'#6366f1', val: patient?.blood_pressure },
+                      { label:'SpO₂',           unit:'%',    icon:'◉', color:'#3b82f6', val: patient?.spo2           },
+                      { label:'Temperature',    unit:'°F',   icon:'◈', color:'#f59e0b', val: patient?.temperature    },
                     ].map(m => (
-                      <div key={m.label} style={{ background:'rgba(0,0,0,0.02)', borderRadius:16, padding:'18px 14px', textAlign:'center', border:'1px solid rgba(0,0,0,0.06)' }}>
-                        <div style={{ fontSize:'1.3rem', color:m.color, marginBottom:5, opacity:.5 }}>{m.icon}</div>
-                        <div style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.25rem', color:'var(--c-muted)' }}>—</div>
+                      <div key={m.label} style={{ background: m.val ? `${m.color}08` : 'rgba(0,0,0,0.02)', borderRadius:16, padding:'18px 14px', textAlign:'center', border:`1px solid ${m.val ? m.color+'25' : 'rgba(0,0,0,0.06)'}` }}>
+                        <div style={{ fontSize:'1.3rem', color:m.color, marginBottom:5, opacity: m.val ? 1 : .4 }}>{m.icon}</div>
+                        <div style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.25rem', color: m.val ? 'var(--c-dark)' : 'var(--c-muted)' }}>{m.val || '—'}</div>
                         <div style={{ fontSize:'.7rem', color:'var(--c-muted)', marginTop:2 }}>{m.unit} · {m.label}</div>
-                        <div style={{ fontSize:'.68rem', color:'#94a3b8', fontWeight:600, marginTop:5 }}>Awaiting review</div>
+                        <div style={{ fontSize:'.68rem', fontWeight:600, marginTop:5, color: m.val ? '#16a34a' : '#94a3b8' }}>{m.val ? 'On record' : 'Awaiting'}</div>
                       </div>
                     ))}
                   </div>
-                  <p style={{ fontSize:'.74rem', color:'var(--c-muted)', marginTop:16, textAlign:'center', padding:'10px 14px', background:'rgba(0,0,0,0.03)', borderRadius:10 }}>
-                    🩺 Vital signs are recorded by your doctor during a consultation
-                  </p>
+                  {patient?.vitals_updated_at && (
+                    <p style={{ fontSize:'.72rem', color:'var(--c-muted)', marginTop:14, textAlign:'center' }}>
+                      Last updated by {patient?.vitals_updated_by} · {fmtDate(patient?.vitals_updated_at)}
+                    </p>
+                  )}
+                  {!patient?.vitals_updated_at && (
+                    <p style={{ fontSize:'.74rem', color:'var(--c-muted)', marginTop:16, textAlign:'center', padding:'10px 14px', background:'rgba(0,0,0,0.03)', borderRadius:10 }}>
+                      🩺 Vital signs are recorded by your doctor during a consultation
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1450,6 +1460,8 @@ function DoctorDashboard({ session, onLogout }) {
   const [result,      setResult]      = useState(null)
   const [pingMsg,     setPingMsg]     = useState('')
   const [pinging,     setPinging]     = useState(false)
+  const [vitals,      setVitals]      = useState({ heart_rate:'', blood_pressure:'', spo2:'', temperature:'' })
+  const [savingVitals, setSavingVitals] = useState(false)
 
   const { doctor, patient, token } = session || {}
 
@@ -1508,6 +1520,20 @@ function DoctorDashboard({ session, onLogout }) {
     try { await docFetch(`/diagnoses/tags/${id}`, { method:'DELETE' }); fetchPatientData() } catch(e){}
   }
 
+  const saveVitals = async () => {
+    setSavingVitals(true); setResult(null)
+    try {
+      const payload = { pid: patient?.pid }
+      if (vitals.heart_rate)     payload.heart_rate     = vitals.heart_rate
+      if (vitals.blood_pressure) payload.blood_pressure = vitals.blood_pressure
+      if (vitals.spo2)           payload.spo2           = vitals.spo2
+      if (vitals.temperature)    payload.temperature    = vitals.temperature
+      await docFetch('/diagnoses/vitals', { method:'PATCH', body: JSON.stringify(payload) })
+      setResult({ success:true, message:'Vital signs updated successfully.' })
+    } catch(e) { setResult({ success:false, message:e.message }) }
+    finally { setSavingVitals(false) }
+  }
+
   const pingPatient = async () => {
     setPinging(true)
     try {
@@ -1534,6 +1560,7 @@ function DoctorDashboard({ session, onLogout }) {
   const statusColors = { pending:'#f59e0b', confirmed:'#22c55e', completed:'#6366f1', cancelled:'#ef4444' }
   const TABS = [
     { id:'overview',     label:'Patient',      icon:'👤' },
+    { id:'vitals',       label:'Vitals',       icon:'💓' },
     { id:'appointments', label:'Appointments', icon:'📅' },
     { id:'files',        label:'Files',        icon:'📁' },
     { id:'diagnosis',    label:'Diagnosis',    icon:'🩺' },
@@ -1720,6 +1747,52 @@ function DoctorDashboard({ session, onLogout }) {
           </div>
         )}
 
+        {/* ── VITALS TAB ── */}
+        {activeTab === 'vitals' && (
+          <div style={{ maxWidth:600, margin:'0 auto' }}>
+            <div className="card" style={{ padding:28 }}>
+              <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem', marginBottom:6 }}>Update Vital Signs</h2>
+              <p style={{ fontSize:'.8rem', color:'var(--c-muted)', marginBottom:24 }}>Enter the patient's current readings. Leave blank to keep existing values.</p>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+                {[
+                  { key:'heart_rate',     label:'Heart Rate',     placeholder:'e.g. 72',     unit:'bpm',  icon:'♥', color:'#f43f5e' },
+                  { key:'blood_pressure', label:'Blood Pressure', placeholder:'e.g. 118/76', unit:'mmHg', icon:'◎', color:'#6366f1' },
+                  { key:'spo2',           label:'SpO₂',           placeholder:'e.g. 98',     unit:'%',    icon:'◉', color:'#3b82f6' },
+                  { key:'temperature',    label:'Temperature',    placeholder:'e.g. 98.6',   unit:'°F',   icon:'◈', color:'#f59e0b' },
+                ].map(v => (
+                  <div key={v.key} style={{ background:'rgba(0,0,0,0.02)', borderRadius:14, padding:'16px', border:'1px solid rgba(0,0,0,0.07)' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+                      <span style={{ fontSize:'1.2rem', color:v.color }}>{v.icon}</span>
+                      <div>
+                        <p style={{ fontWeight:700, fontSize:'.82rem', color:'var(--c-dark)' }}>{v.label}</p>
+                        <p style={{ fontSize:'.7rem', color:'var(--c-muted)' }}>{v.unit}</p>
+                      </div>
+                    </div>
+                    <input
+                      className="inp"
+                      placeholder={v.placeholder}
+                      value={vitals[v.key]}
+                      onChange={e => setVitals(prev => ({ ...prev, [v.key]: e.target.value }))}
+                      style={{ background:'rgba(255,255,255,0.9)', borderColor: vitals[v.key] ? v.color : undefined }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <button
+                className="btn"
+                onClick={saveVitals}
+                disabled={savingVitals || !Object.values(vitals).some(v => v.trim())}
+                style={{ width:'100%', marginTop:22, padding:'13px', borderRadius:14, fontSize:'.9rem', opacity: savingVitals ? .7 : 1 }}
+              >
+                {savingVitals ? 'Saving…' : '💓 Save Vital Signs'}
+              </button>
+              <p style={{ fontSize:'.73rem', color:'var(--c-muted)', marginTop:12, textAlign:'center' }}>
+                Saved vitals will appear immediately on the patient's dashboard
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* ── DIAGNOSIS TAB ── */}
         {activeTab === 'diagnosis' && (
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:22 }}>
@@ -1799,6 +1872,17 @@ export default function App() {
       setView('dashboard')
       authFetch('/auth/me')
         .then(d => { setPatient(d.data); storage.set(PATIENT_KEY, d.data) })
+
+  // Refresh patient profile (including vitals) when tab becomes visible
+  const refreshPatient = () => {
+    if (getToken()) {
+      authFetch('/auth/me').then(d => { setPatient(d.data); storage.set(PATIENT_KEY, d.data) }).catch(()=>{})
+    }
+  }
+  useEffect(() => {
+    window.addEventListener('focus', refreshPatient)
+    return () => window.removeEventListener('focus', refreshPatient)
+  }, [])
         .catch(() => { clearAuth(); setView('landing') })
     }
     setBooting(false)
