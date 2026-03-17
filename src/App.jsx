@@ -565,34 +565,37 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
       {files.map(f => {
         const ft = FILE_TYPES.find(t => t.value === f.file_type) || FILE_TYPES[3]
         return (
-          <div key={f.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', background:'rgba(255,255,255,0.7)', borderRadius:16, border:'1px solid rgba(0,0,0,0.07)', transition:'all .2s' }}
+          <div key={f.id} style={{ padding:'14px 16px', background:'rgba(255,255,255,0.7)', borderRadius:16, border:'1px solid rgba(0,0,0,0.07)', transition:'all .2s' }}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.95)'}
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.7)'}>
-            <div style={{ width:42, height:42, borderRadius:12, background:`${ft.color}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.2rem', flexShrink:0 }}>
-              {ft.icon}
-            </div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <p style={{ fontWeight:600, fontSize:'.88rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.file_name}</p>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:3 }}>
-                <span style={{ fontSize:'.7rem', fontWeight:600, color:ft.color, background:`${ft.color}12`, borderRadius:50, padding:'2px 8px' }}>{ft.label}</span>
-                <span style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>{fmtBytes(f.file_size)}</span>
-                <span style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>{fmtDate(f.upload_date)}</span>
+            {/* Top row: icon + name + action buttons */}
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ width:40, height:40, borderRadius:12, background:`${ft.color}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem', flexShrink:0 }}>
+                {ft.icon}
               </div>
-              {f.notes && <p style={{ fontSize:'.74rem', color:'var(--c-muted)', marginTop:3, fontStyle:'italic' }}>"{f.notes}"</p>}
+              <p style={{ fontWeight:600, fontSize:'.87rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1, minWidth:0 }}>{f.file_name}</p>
+              <div style={{ display:'flex', gap:7, flexShrink:0 }}>
+                {f.file_url && (
+                  <a href={f.file_url} target="_blank" rel="noreferrer"
+                    style={{ width:34, height:34, borderRadius:10, background:'rgba(0,180,160,0.1)', display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', fontSize:'.85rem', transition:'all .2s' }}
+                    onMouseEnter={e => e.currentTarget.style.background='rgba(0,180,160,0.2)'}
+                    onMouseLeave={e => e.currentTarget.style.background='rgba(0,180,160,0.1)'}>👁</a>
+                )}
+                <button onClick={() => handleDelete(f)} disabled={deleting === f.id}
+                  style={{ width:34, height:34, borderRadius:10, background:'rgba(239,68,68,0.08)', border:'none', cursor:'pointer', fontSize:'.85rem', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .2s', opacity: deleting===f.id?.5:1 }}
+                  onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,0.18)'}
+                  onMouseLeave={e => e.currentTarget.style.background='rgba(239,68,68,0.08)'}>
+                  {deleting === f.id ? <Spinner size={14} color="#ef4444" /> : '🗑'}
+                </button>
+              </div>
             </div>
-            <div style={{ display:'flex', gap:8, flexShrink:0 }}>
-              {f.file_url && (
-                <a href={f.file_url} target="_blank" rel="noreferrer" style={{ width:34, height:34, borderRadius:10, background:'rgba(0,180,160,0.1)', display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', fontSize:'.85rem', transition:'all .2s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,180,160,0.2)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,180,160,0.1)'}>
-                  👁
-                </a>
-              )}
-              <button onClick={() => handleDelete(f)} disabled={deleting === f.id} style={{ width:34, height:34, borderRadius:10, background:'rgba(239,68,68,0.08)', border:'none', cursor:'pointer', fontSize:'.85rem', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .2s', opacity: deleting === f.id ? .5 : 1 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.18)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}>
-                {deleting === f.id ? <Spinner size={14} color="#ef4444" /> : '🗑'}
-              </button>
+            {/* Bottom row: metadata */}
+            <div style={{ display:'flex', alignItems:'center', flexWrap:'wrap', gap:6, marginTop:8, paddingLeft:52 }}>
+              <span style={{ fontSize:'.7rem', fontWeight:600, color:ft.color, background:`${ft.color}12`, borderRadius:50, padding:'2px 8px' }}>{ft.label}</span>
+              <span style={{ fontSize:'.71rem', color:'var(--c-muted)' }}>{fmtBytes(f.file_size)}</span>
+              <span style={{ fontSize:'.71rem', color:'var(--c-muted)' }}>·</span>
+              <span style={{ fontSize:'.71rem', color:'var(--c-muted)' }}>{fmtDate(f.upload_date)}</span>
+              {f.notes && <span style={{ fontSize:'.71rem', color:'var(--c-muted)', fontStyle:'italic', width:'100%', marginTop:1 }}>"{f.notes}"</span>}
             </div>
           </div>
         )
@@ -898,27 +901,30 @@ function Dashboard({ patient, onLogout }) {
                   </div>
                 </div>
 
-                {/* Vital signs */}
+                {/* Vital signs — set by doctor only */}
                 <div className="card" style={{ padding:28 }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
                     <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem' }}>Vital Signs</h2>
-                    <span style={{ background:'rgba(34,197,94,0.1)', color:'#16a34a', fontWeight:700, fontSize:'.7rem', padding:'4px 12px', borderRadius:50, border:'1px solid rgba(34,197,94,0.2)' }}>ALL NORMAL</span>
+                    <span style={{ background:'rgba(148,163,184,0.12)', color:'#64748b', fontWeight:700, fontSize:'.7rem', padding:'4px 12px', borderRadius:50, border:'1px solid rgba(148,163,184,0.25)' }}>SET BY DOCTOR</span>
                   </div>
                   <div className="vitals-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
                     {[
-                      { label:'Heart Rate', value:'72',     unit:'bpm',  icon:'♥', color:'#f43f5e', trend:'+2%' },
-                      { label:'Blood Pressure', value:'118/76', unit:'mmHg', icon:'◎', color:'#6366f1', trend:'Stable' },
-                      { label:'SpO₂', value:'98', unit:'%', icon:'◉', color:'#3b82f6', trend:'+1%' },
-                      { label:'Temperature', value:'98.6', unit:'°F', icon:'◈', color:'#f59e0b', trend:'Normal' },
+                      { label:'Heart Rate',     unit:'bpm',  icon:'♥', color:'#f43f5e' },
+                      { label:'Blood Pressure', unit:'mmHg', icon:'◎', color:'#6366f1' },
+                      { label:'SpO₂',           unit:'%',    icon:'◉', color:'#3b82f6' },
+                      { label:'Temperature',    unit:'°F',   icon:'◈', color:'#f59e0b' },
                     ].map(m => (
-                      <div key={m.label} style={{ background:'rgba(0,180,160,0.04)', borderRadius:16, padding:'18px 14px', textAlign:'center', border:'1px solid rgba(0,180,160,0.1)' }}>
-                        <div style={{ fontSize:'1.3rem', color:m.color, marginBottom:5 }}>{m.icon}</div>
-                        <div style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.25rem', color:'var(--c-dark)' }}>{m.value}</div>
+                      <div key={m.label} style={{ background:'rgba(0,0,0,0.02)', borderRadius:16, padding:'18px 14px', textAlign:'center', border:'1px solid rgba(0,0,0,0.06)' }}>
+                        <div style={{ fontSize:'1.3rem', color:m.color, marginBottom:5, opacity:.5 }}>{m.icon}</div>
+                        <div style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.25rem', color:'var(--c-muted)' }}>—</div>
                         <div style={{ fontSize:'.7rem', color:'var(--c-muted)', marginTop:2 }}>{m.unit} · {m.label}</div>
-                        <div style={{ fontSize:'.7rem', color:'#16a34a', fontWeight:700, marginTop:5 }}>{m.trend}</div>
+                        <div style={{ fontSize:'.68rem', color:'#94a3b8', fontWeight:600, marginTop:5 }}>Awaiting review</div>
                       </div>
                     ))}
                   </div>
+                  <p style={{ fontSize:'.74rem', color:'var(--c-muted)', marginTop:16, textAlign:'center', padding:'10px 14px', background:'rgba(0,0,0,0.03)', borderRadius:10 }}>
+                    🩺 Vital signs are recorded by your doctor during a consultation
+                  </p>
                 </div>
               </div>
 
@@ -1691,19 +1697,20 @@ function DoctorDashboard({ session, onLogout }) {
                   {patientData.files.map(f => {
                     const ft = FILE_TYPES.find(t => t.value === f.file_type) || FILE_TYPES[3]
                     return (
-                      <div key={f.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', background:'rgba(255,255,255,0.7)', borderRadius:16, border:'1px solid rgba(0,0,0,0.07)' }}>
-                        <div style={{ width:42, height:42, borderRadius:12, background:`${ft.color}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.2rem', flexShrink:0 }}>{ft.icon}</div>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <p style={{ fontWeight:600, fontSize:'.88rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.file_name}</p>
-                          <div style={{ display:'flex', gap:8, marginTop:3 }}>
-                            <span style={{ fontSize:'.7rem', fontWeight:600, color:ft.color, background:`${ft.color}12`, borderRadius:50, padding:'2px 8px' }}>{ft.label}</span>
-                            <span style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>{fmtBytes(f.file_size)}</span>
-                            <span style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>{fmtDate(f.upload_date)}</span>
-                          </div>
+                      <div key={f.id} style={{ padding:'14px 16px', background:'rgba(255,255,255,0.7)', borderRadius:16, border:'1px solid rgba(0,0,0,0.07)' }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                          <div style={{ width:40, height:40, borderRadius:12, background:`${ft.color}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem', flexShrink:0 }}>{ft.icon}</div>
+                          <p style={{ fontWeight:600, fontSize:'.87rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1, minWidth:0 }}>{f.file_name}</p>
+                          {f.file_url && (
+                            <a href={f.file_url} target="_blank" rel="noreferrer" style={{ width:34, height:34, borderRadius:10, background:'rgba(0,180,160,0.1)', display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', fontSize:'.85rem', flexShrink:0 }}>👁</a>
+                          )}
                         </div>
-                        {f.file_url && (
-                          <a href={f.file_url} target="_blank" rel="noreferrer" style={{ width:34, height:34, borderRadius:10, background:'rgba(0,180,160,0.1)', display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', fontSize:'.85rem' }}>👁</a>
-                        )}
+                        <div style={{ display:'flex', alignItems:'center', flexWrap:'wrap', gap:6, marginTop:8, paddingLeft:52 }}>
+                          <span style={{ fontSize:'.7rem', fontWeight:600, color:ft.color, background:`${ft.color}12`, borderRadius:50, padding:'2px 8px' }}>{ft.label}</span>
+                          <span style={{ fontSize:'.71rem', color:'var(--c-muted)' }}>{fmtBytes(f.file_size)}</span>
+                          <span style={{ fontSize:'.71rem', color:'var(--c-muted)' }}>·</span>
+                          <span style={{ fontSize:'.71rem', color:'var(--c-muted)' }}>{fmtDate(f.upload_date)}</span>
+                        </div>
                       </div>
                     )
                   })}
