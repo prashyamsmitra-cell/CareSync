@@ -1872,20 +1872,20 @@ export default function App() {
       setView('dashboard')
       authFetch('/auth/me')
         .then(d => { setPatient(d.data); storage.set(PATIENT_KEY, d.data) })
-
-  // Refresh patient profile (including vitals) when tab becomes visible
-  const refreshPatient = () => {
-    if (getToken()) {
-      authFetch('/auth/me').then(d => { setPatient(d.data); storage.set(PATIENT_KEY, d.data) }).catch(()=>{})
-    }
-  }
-  useEffect(() => {
-    window.addEventListener('focus', refreshPatient)
-    return () => window.removeEventListener('focus', refreshPatient)
-  }, [])
         .catch(() => { clearAuth(); setView('landing') })
     }
     setBooting(false)
+  }, [])
+
+  // Refresh patient vitals when tab becomes visible
+  useEffect(() => {
+    const refreshPatient = () => {
+      if (getToken()) {
+        authFetch('/auth/me').then(d => { setPatient(d.data); storage.set(PATIENT_KEY, d.data) }).catch(()=>{})
+      }
+    }
+    window.addEventListener('focus', refreshPatient)
+    return () => window.removeEventListener('focus', refreshPatient)
   }, [])
 
   const handleAuthSuccess = (p) => { setPatient(p); setAuthOpen(false); setView('dashboard') }
