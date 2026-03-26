@@ -717,7 +717,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
                     <button
                       className="btn"
                       style={{ padding:'6px 14px', fontSize:'.75rem', borderRadius:50 }}
-                      onClick={() => { onClose(); }}
+                      onClick={() => { if(onNavigate) onNavigate('appointments'); onClose(); }}
                     >
                       Book →
                     </button>
@@ -1567,39 +1567,41 @@ function DoctorDashboard({ session, onLogout }) {
   ]
 
   return (
-    <div style={{ minHeight:'100vh', background:'var(--c-bg)', paddingTop:70 }}>
+    <div style={{ minHeight:'100vh', background:'var(--c-bg)', paddingTop:108 }}>
       {/* Navbar */}
-      <nav style={{ position:'fixed', top:0, left:0, right:0, zIndex:100, background:'linear-gradient(135deg,#060d1f,#0a2428)', height:62 }}>
-        <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 24px', height:'100%', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <nav style={{ position:'fixed', top:0, left:0, right:0, zIndex:100, background:'linear-gradient(135deg,#060d1f,#0a2428)' }}>
+        {/* Top bar — logo + session info + end button */}
+        <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <Logo size={30} radius={8} />
+            <Logo size={28} radius={8} />
             <div>
-              <p style={{ color:'#fff', fontWeight:700, fontFamily:'var(--font-h)', fontSize:'.9rem' }}>Doctor Portal</p>
-              <p style={{ color:'rgba(255,255,255,0.4)', fontSize:'.7rem' }}>{doctor?.name} · {doctor?.specialization}</p>
+              <p style={{ color:'#fff', fontWeight:700, fontFamily:'var(--font-h)', fontSize:'.88rem' }}>Doctor Portal</p>
+              <p style={{ color:'rgba(255,255,255,0.4)', fontSize:'.68rem' }}>{doctor?.name} · {doctor?.specialization}</p>
             </div>
           </div>
-          <div className="desktop-tabs" style={{ display:'flex', gap:4 }}>
-            {TABS.map(t => (
-              <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:50, border:'none', cursor:'pointer', fontFamily:'var(--font-b)', fontWeight:600, fontSize:'.8rem', transition:'all .2s', background: activeTab === t.id ? 'rgba(255,255,255,0.15)' : 'transparent', color: activeTab === t.id ? '#fff' : 'rgba(255,255,255,0.45)' }}>
-                <span>{t.icon}</span> {t.label}
-              </button>
-            ))}
-          </div>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ background:'rgba(0,180,160,0.2)', border:'1px solid rgba(0,180,160,0.4)', borderRadius:10, padding:'5px 12px', textAlign:'right' }}>
-              <p style={{ color:'var(--c-cyan)', fontWeight:700, fontSize:'.75rem' }}>Accessing: {patient?.pid}</p>
-              <p style={{ color:'rgba(255,255,255,0.5)', fontSize:'.68rem' }}>{patient?.name} · 2hr session</p>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <div style={{ background:'rgba(0,180,160,0.2)', border:'1px solid rgba(0,180,160,0.4)', borderRadius:10, padding:'4px 10px', textAlign:'right' }}>
+              <p style={{ color:'var(--c-cyan)', fontWeight:700, fontSize:'.72rem' }}>Accessing: {patient?.pid}</p>
+              <p style={{ color:'rgba(255,255,255,0.5)', fontSize:'.66rem' }}>{patient?.name} · 2hr session</p>
             </div>
-            <button onClick={onLogout} style={{ background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:50, padding:'7px 16px', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:'.8rem', fontWeight:600 }}>End Session</button>
+            <button onClick={onLogout} style={{ background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:50, padding:'6px 14px', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:'.78rem', fontWeight:600 }}>End</button>
           </div>
+        </div>
+        {/* Tab bar — separate row below top bar */}
+        <div className="desktop-tabs" style={{ borderTop:'1px solid rgba(255,255,255,0.07)', display:'flex', gap:2, padding:'0 24px', overflowX:'auto' }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', border:'none', borderBottom: activeTab === t.id ? '2px solid var(--c-teal)' : '2px solid transparent', cursor:'pointer', fontFamily:'var(--font-b)', fontWeight:600, fontSize:'.8rem', transition:'all .2s', background:'transparent', color: activeTab === t.id ? 'var(--c-cyan)' : 'rgba(255,255,255,0.45)', whiteSpace:'nowrap' }}>
+              <span>{t.icon}</span> {t.label}
+            </button>
+          ))}
         </div>
       </nav>
 
-      {/* Mobile bottom nav */}
+      {/* Mobile bottom nav — scrollable for 5 tabs */}
       <nav className="mobile-nav">
-        <div className="mobile-nav-inner">
+        <div className="mobile-nav-inner" style={{ overflowX:'auto', justifyContent:'flex-start', gap:0 }}>
           {TABS.map(t => (
-            <button key={t.id} className={`mobile-nav-btn${activeTab === t.id ? ' active' : ''}`} onClick={() => setActiveTab(t.id)}>
+            <button key={t.id} className={`mobile-nav-btn${activeTab === t.id ? ' active' : ''}`} onClick={() => setActiveTab(t.id)} style={{ minWidth:64, flexShrink:0 }}>
               <span>{t.icon}</span>
               <span style={{ color: activeTab === t.id ? 'var(--c-teal)' : 'var(--c-muted)' }}>{t.label}</span>
             </button>
@@ -1608,7 +1610,7 @@ function DoctorDashboard({ session, onLogout }) {
         </div>
       </nav>
 
-      <div className="dashboard-content" style={{ maxWidth:1100, margin:'0 auto', padding:'24px 24px 80px' }}>
+      <div className="dashboard-content" style={{ maxWidth:1100, margin:'0 auto', padding:'24px 24px 80px', paddingTop:116 }}>
         {result && <div style={{ marginBottom:16 }}><Alert type={result.success ? 'success' : 'error'}>{result.message}</Alert></div>}
 
         {/* ── OVERVIEW TAB ── */}
@@ -1877,15 +1879,18 @@ export default function App() {
     setBooting(false)
   }, [])
 
-  // Refresh patient vitals when tab becomes visible
+  // Refresh patient profile + vitals every 30 seconds
   useEffect(() => {
     const refreshPatient = () => {
       if (getToken()) {
         authFetch('/auth/me').then(d => { setPatient(d.data); storage.set(PATIENT_KEY, d.data) }).catch(()=>{})
       }
     }
+    // Also refresh on tab focus
     window.addEventListener('focus', refreshPatient)
-    return () => window.removeEventListener('focus', refreshPatient)
+    // Poll every 30 seconds so vitals update without needing to switch tabs
+    const interval = setInterval(refreshPatient, 30000)
+    return () => { window.removeEventListener('focus', refreshPatient); clearInterval(interval) }
   }, [])
 
   const handleAuthSuccess = (p) => { setPatient(p); setAuthOpen(false); setView('dashboard') }
