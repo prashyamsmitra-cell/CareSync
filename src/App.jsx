@@ -1055,11 +1055,6 @@ function Landing({ onOpenAuth, onDoctorPortal }) {
           </div>
           {/* Desktop nav links */}
           <div className="desktop-tabs" style={{ display:'flex', alignItems:'center', gap:8 }}>
-            {['Features','About','Pricing'].map(l => (
-              <a key={l} href="#" style={{ color: scrolled ? 'var(--c-muted)' : 'rgba(255,255,255,0.7)', fontWeight:500, fontSize:'.85rem', textDecoration:'none', padding:'6px 12px', borderRadius:50, transition:'all .2s' }}
-                onMouseEnter={e => e.target.style.color = scrolled ? 'var(--c-dark)' : '#fff'}
-                onMouseLeave={e => e.target.style.color = scrolled ? 'var(--c-muted)' : 'rgba(255,255,255,0.7)'}>{l}</a>
-            ))}
             <button className="btn" style={{ padding:'9px 20px', fontSize:'.82rem' }} onClick={onOpenAuth}>Get Started</button>
           </div>
           {/* Mobile — just Get Started button */}
