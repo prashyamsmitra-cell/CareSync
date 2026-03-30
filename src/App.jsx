@@ -633,7 +633,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
       setMsgs(m => [...m, { role:'ai', text:reply, doctor: doctor || null, redirect: redirect || null }])
       // Auto-navigate if chatbot suggests a tab
       if (redirect && onNavigate) {
-        setTimeout(() => onNavigate(redirect), 800)
+        setTimeout(() => onNavigate(redirect, doctor || null), 800)
       }
     } catch (e) {
       setMsgs(m => [...m, { role:'ai', text:'Sorry, I had trouble responding. Please try again.', doctor:null }])
@@ -694,7 +694,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
               {m.role === 'ai' && m.redirect && !m.doctor && (
                 <div style={{ marginTop:8, marginLeft:33 }}>
                   <button
-                    onClick={() => { if(onNavigate) onNavigate(m.redirect); onClose(); }}
+                    onClick={() => { if(onNavigate) onNavigate(m.redirect, m.doctor || null); onClose(); }}
                     style={{ padding:'8px 18px', borderRadius:50, background:'linear-gradient(135deg,#00b4a0,#00897b)', border:'none', color:'#fff', fontWeight:700, fontSize:'.78rem', cursor:'pointer', fontFamily:'var(--font-b)' }}
                   >
                     Go to {m.redirect.charAt(0).toUpperCase() + m.redirect.slice(1)} →
@@ -717,7 +717,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
                     <button
                       className="btn"
                       style={{ padding:'6px 14px', fontSize:'.75rem', borderRadius:50 }}
-                      onClick={() => { if(onNavigate) onNavigate('appointments'); onClose(); }}
+                      onClick={() => { if(onNavigate) onNavigate('appointments', m.doctor); onClose(); }}
                     >
                       Book →
                     </button>
@@ -766,6 +766,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
 function Dashboard({ patient, onLogout }) {
   const [activeTab, setActiveTab]   = useState('overview')
   const [chat,      setChat]        = useState(false)
+  const [preselectDoctor, setPreselectDoctor] = useState(null)
   const [files,     setFiles]       = useState([])
   const [filesLoading, setFilesLoading] = useState(false)
 
@@ -1007,7 +1008,7 @@ function Dashboard({ patient, onLogout }) {
         )}
 
         {/* ── APPOINTMENTS TAB ── */}
-        {activeTab === 'appointments' && <AppointmentsTab patient={patient} />}
+        {activeTab === 'appointments' && <AppointmentsTab patient={patient} preselectDoctor={preselectDoctor} onPreselectUsed={() => setPreselectDoctor(null)} />}
 
         {/* ── UPLOAD TAB ── */}
         {activeTab === 'upload' && (
@@ -1028,7 +1029,7 @@ function Dashboard({ patient, onLogout }) {
       {/* FAB */}
       <button className="btn fab-btn" onClick={() => setChat(true)} style={{ position:'fixed', bottom:32, right:32, width:56, height:56, borderRadius:18, fontSize:'1.3rem', padding:0, justifyContent:'center', boxShadow:'0 10px 30px rgba(0,180,160,0.4)', zIndex:50, animation:'glow 3s ease-in-out infinite' }} title="AI Assistant">✦</button>
 
-      {chat && <ChatBot patient={patient} onClose={() => setChat(false)} onNavigate={(tab) => { setActiveTab(tab); setChat(false); }} />}
+      {chat && <ChatBot patient={patient} onClose={() => setChat(false)} onNavigate={(tab, doctor=null) => { if(doctor) setPreselectDoctor(doctor); setActiveTab(tab); setChat(false); }} />}
     </div>
   )
 }
@@ -1141,7 +1142,7 @@ function Landing({ onOpenAuth, onDoctorPortal }) {
 /* ════════════════════════════════════════════════════════════════
    APPOINTMENTS TAB
 ════════════════════════════════════════════════════════════════ */
-function AppointmentsTab({ patient }) {
+function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
   const [doctors,       setDoctors]       = useState([])
   const [appointments,  setAppointments]  = useState([])
   const [showBook,      setShowBook]      = useState(false)
@@ -1161,10 +1162,25 @@ function AppointmentsTab({ patient }) {
     fetchAppointments()
     fetchPings()
     fetchOTPNotification()
-    // Poll for OTP notification every 5 seconds
     const interval = setInterval(fetchOTPNotification, 5000)
     return () => clearInterval(interval)
   }, [])
+
+  // Auto-open booking form and pre-select doctor from chatbot recommendation
+  useEffect(() => {
+    if (preselectDoctor && doctors.length > 0) {
+      // Match by doctor_id (e.g. DOC001) or by name
+      const match = doctors.find(d =>
+        d.doctor_id === preselectDoctor.id ||
+        d.name?.toLowerCase() === preselectDoctor.name?.toLowerCase()
+      )
+      if (match) {
+        setSelDoctor(match.doctor_id || match.id)
+        setShowBook(true)
+        if (onPreselectUsed) onPreselectUsed()
+      }
+    }
+  }, [preselectDoctor, doctors])
 
   useEffect(() => {
     if (selDoctor && selDate) fetchSlots()
