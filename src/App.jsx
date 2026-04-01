@@ -767,6 +767,20 @@ function Dashboard({ patient, onLogout }) {
   const [activeTab, setActiveTab]   = useState('overview')
   const [chat,      setChat]        = useState(false)
   const [preselectDoctor, setPreselectDoctor] = useState(null)
+  const [otpPopup,  setOtpPopup]    = useState(null)
+
+  // Global OTP notification polling — visible on ALL tabs
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const d = await authFetch('/appointments/otp-notification')
+        if (d.data?.plain_otp) setOtpPopup(d.data)
+      } catch(e){}
+    }
+    poll()
+    const iv = setInterval(poll, 1500)
+    return () => clearInterval(iv)
+  }, [])
   const [files,     setFiles]       = useState([])
   const [filesLoading, setFilesLoading] = useState(false)
 
@@ -1029,6 +1043,44 @@ function Dashboard({ patient, onLogout }) {
       {/* FAB */}
       <button className="btn fab-btn" onClick={() => setChat(true)} style={{ position:'fixed', bottom:32, right:32, width:56, height:56, borderRadius:18, fontSize:'1.3rem', padding:0, justifyContent:'center', boxShadow:'0 10px 30px rgba(0,180,160,0.4)', zIndex:50, animation:'glow 3s ease-in-out infinite' }} title="AI Assistant">✦</button>
 
+      {/* ── GLOBAL OTP POPUP — visible on all tabs ── */}
+      {otpPopup && (
+        <div style={{ position:'fixed', top:16, right:16, zIndex:999, width:320, borderRadius:20, overflow:'hidden', boxShadow:'0 20px 60px rgba(0,0,0,0.25)', animation:'slideIn .3s ease' }}>
+          {/* Header */}
+          <div style={{ background:'linear-gradient(135deg,#00897B,#00695C)', padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ width:34, height:34, borderRadius:10, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem' }}>🔐</div>
+              <div>
+                <p style={{ color:'#fff', fontWeight:700, fontSize:'.85rem', fontFamily:'var(--font-h)' }}>Doctor Access Request</p>
+                <p style={{ color:'rgba(255,255,255,0.65)', fontSize:'.68rem' }}>Share this code verbally</p>
+              </div>
+            </div>
+            <button onClick={() => setOtpPopup(null)} style={{ width:26, height:26, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'none', color:'#fff', cursor:'pointer', fontSize:'1rem', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700 }}>×</button>
+          </div>
+          {/* OTP code */}
+          <div style={{ background:'#fff', padding:'20px 18px' }}>
+            <p style={{ fontSize:'.75rem', color:'var(--c-muted)', marginBottom:10, textAlign:'center' }}>Your one-time access code</p>
+            <div style={{ background:'linear-gradient(135deg,rgba(0,137,123,0.06),rgba(0,180,160,0.03))', border:'2px dashed rgba(0,180,160,0.3)', borderRadius:14, padding:'16px', textAlign:'center', marginBottom:14 }}>
+              <p style={{ fontFamily:'var(--font-h)', fontWeight:900, fontSize:'2.4rem', letterSpacing:'.3em', color:'var(--c-dark)', lineHeight:1 }}>{otpPopup.plain_otp}</p>
+            </div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+              <p style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>⏱ Valid for 10 minutes</p>
+              <button
+                onClick={() => { navigator.clipboard?.writeText(otpPopup.plain_otp) }}
+                style={{ fontSize:'.72rem', color:'var(--c-teal-dim)', fontWeight:600, background:'rgba(0,180,160,0.08)', border:'1px solid rgba(0,180,160,0.2)', borderRadius:50, padding:'3px 10px', cursor:'pointer', fontFamily:'var(--font-b)' }}>
+                Copy
+              </button>
+            </div>
+            <p style={{ fontSize:'.7rem', color:'#94a3b8', textAlign:'center', lineHeight:1.5 }}>
+              Do not share with anyone other than your doctor
+            </p>
+            <button onClick={() => setOtpPopup(null)} style={{ width:'100%', marginTop:12, padding:'10px', borderRadius:50, background:'rgba(0,0,0,0.04)', border:'1px solid rgba(0,0,0,0.08)', color:'var(--c-muted)', fontWeight:600, fontSize:'.78rem', cursor:'pointer', fontFamily:'var(--font-b)' }}>
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {chat && <ChatBot patient={patient} onClose={() => setChat(false)} onNavigate={(tab, doctor=null) => { if(doctor) setPreselectDoctor(doctor); setActiveTab(tab); setChat(false); }} />}
     </div>
   )
@@ -1155,15 +1207,12 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
   const [slotsLoading,  setSlotsLoading]  = useState(false)
   const [result,        setResult]        = useState(null)
   const [pings,         setPings]         = useState([])
-  const [otpNotification, setOtpNotification] = useState(null)
+
 
   useEffect(() => {
     fetchDoctors()
     fetchAppointments()
     fetchPings()
-    fetchOTPNotification()
-    const interval = setInterval(fetchOTPNotification, 1500)
-    return () => clearInterval(interval)
   }, [])
 
   // Auto-open booking form and pre-select doctor from chatbot recommendation
@@ -1195,12 +1244,7 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
   const fetchPings = async () => {
     try { const d = await authFetch('/diagnoses/pings/mine'); setPings(d.data || []) } catch(e){}
   }
-  const fetchOTPNotification = async () => {
-    try {
-      const d = await authFetch('/appointments/otp-notification')
-      if (d.data?.plain_otp) setOtpNotification(d.data)
-    } catch(e){}
-  }
+
   const fetchSlots = async () => {
     setSlotsLoading(true); setSelSlot('')
     try {
@@ -1234,23 +1278,7 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
   return (
     <div style={{ maxWidth:900, margin:'0 auto' }}>
 
-      {/* OTP notification — in-app delivery when SMS not available */}
-      {otpNotification && (
-        <div style={{ marginBottom:16, padding:'18px 20px', background:'linear-gradient(135deg,rgba(0,180,160,0.12),rgba(0,212,200,0.08))', border:'2px solid rgba(0,180,160,0.35)', borderRadius:18 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-            <span style={{ fontSize:'1.4rem' }}>🔐</span>
-            <p style={{ fontWeight:700, fontSize:'.92rem', color:'var(--c-teal-dim)' }}>Doctor Access Code</p>
-          </div>
-          <p style={{ fontSize:'.82rem', color:'var(--c-muted)', marginBottom:10 }}>A doctor is requesting access to your records. Share this code with them verbally:</p>
-          <div style={{ background:'#fff', borderRadius:14, padding:'16px', textAlign:'center', border:'1px solid rgba(0,180,160,0.2)', marginBottom:12 }}>
-            <p style={{ fontFamily:'var(--font-h)', fontWeight:900, fontSize:'2.2rem', letterSpacing:'.25em', color:'var(--c-dark)' }}>{otpNotification.plain_otp}</p>
-            <p style={{ fontSize:'.72rem', color:'var(--c-muted)', marginTop:4 }}>Valid for 10 minutes · Do not share with anyone else</p>
-          </div>
-          <button onClick={() => setOtpNotification(null)} style={{ width:'100%', padding:'10px', borderRadius:50, background:'rgba(0,180,160,0.1)', border:'1px solid rgba(0,180,160,0.2)', color:'var(--c-teal-dim)', fontWeight:600, fontSize:'.82rem', cursor:'pointer' }}>
-            Dismiss
-          </button>
-        </div>
-      )}
+
 
       {/* Doctor pings */}
       {pings.length > 0 && (
