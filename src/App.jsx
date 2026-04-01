@@ -1092,7 +1092,7 @@ function Landing({ onOpenAuth, onDoctorPortal }) {
             <button className="btn-ow" style={{ fontSize:'1rem', padding:'15px 34px' }} onClick={onDoctorPortal}>Doctor Portal</button>
           </div>
           <div className="fu4" style={{ display:'flex', justifyContent:'center', gap:44, marginTop:56, flexWrap:'wrap' }}>
-            {[['50K+','Patients'],['99.9%','Uptime'],['4.9★','Rating']].map(([v, l]) => (
+            {[['6','Specialist Doctors'],['End-to-End','Encryption'],['OTP','Secured Access']].map(([v, l]) => (
               <div key={l} style={{ textAlign:'center' }}>
                 <div style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.7rem', color:'#fff', marginBottom:2 }}>{v}</div>
                 <div style={{ fontSize:'.72rem', color:'rgba(255,255,255,0.35)', letterSpacing:'.06em', textTransform:'uppercase' }}>{l}</div>
@@ -1162,7 +1162,7 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
     fetchAppointments()
     fetchPings()
     fetchOTPNotification()
-    const interval = setInterval(fetchOTPNotification, 5000)
+    const interval = setInterval(fetchOTPNotification, 1500)
     return () => clearInterval(interval)
   }, [])
 
@@ -1473,6 +1473,20 @@ function DoctorDashboard({ session, onLogout }) {
   const [pinging,     setPinging]     = useState(false)
   const [vitals,      setVitals]      = useState({ heart_rate:'', blood_pressure:'', spo2:'', temperature:'' })
   const [savingVitals, setSavingVitals] = useState(false)
+  const [timeLeft,    setTimeLeft]    = useState(600) // 10 minutes in seconds
+
+  // Countdown timer — auto logout when session expires
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) { clearInterval(timer); onLogout(); return 0; }
+        return t - 1;
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const fmtTime = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`
 
   const { doctor, patient, token } = session || {}
 
@@ -1591,9 +1605,11 @@ function DoctorDashboard({ session, onLogout }) {
             </div>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <div style={{ background:'rgba(0,180,160,0.2)', border:'1px solid rgba(0,180,160,0.4)', borderRadius:10, padding:'4px 10px', textAlign:'right' }}>
+            <div style={{ background: timeLeft <= 60 ? 'rgba(239,68,68,0.2)' : 'rgba(0,180,160,0.2)', border:`1px solid ${timeLeft<=60?'rgba(239,68,68,0.5)':'rgba(0,180,160,0.4)'}`, borderRadius:10, padding:'4px 10px', textAlign:'right', transition:'all .5s' }}>
               <p style={{ color:'var(--c-cyan)', fontWeight:700, fontSize:'.72rem' }}>Accessing: {patient?.pid}</p>
-              <p style={{ color:'rgba(255,255,255,0.5)', fontSize:'.66rem' }}>{patient?.name} · 2hr session</p>
+              <p style={{ color: timeLeft <= 60 ? '#fca5a5' : 'rgba(255,255,255,0.5)', fontSize:'.66rem', fontWeight: timeLeft <= 60 ? 700 : 400 }}>
+                {patient?.name} · {fmtTime(timeLeft)} left {timeLeft <= 60 ? '⚠️' : ''}
+              </p>
             </div>
             <button onClick={onLogout} style={{ background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:50, padding:'6px 14px', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:'.78rem', fontWeight:600 }}>End</button>
           </div>
