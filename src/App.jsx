@@ -767,6 +767,38 @@ function Dashboard({ patient, onLogout }) {
   const [activeTab, setActiveTab]   = useState('overview')
   const [chat,      setChat]        = useState(false)
   const [preselectDoctor, setPreselectDoctor] = useState(null)
+  const [editPhysical, setEditPhysical] = useState(false)
+  const [editForm,     setEditForm]     = useState({})
+  const [editSaving,   setEditSaving]   = useState(false)
+  const [editResult,   setEditResult]   = useState(null)
+
+  const openEdit = () => {
+    setEditForm({
+      weight_kg:  patient?.weight_kg  || '',
+      height_cm:  patient?.height_cm  || '',
+      blood_type: patient?.blood_type || '',
+      gender:     patient?.gender     || '',
+      phone:      patient?.phone      || '',
+    })
+    setEditResult(null)
+    setEditPhysical(true)
+  }
+
+  const saveEdit = async () => {
+    setEditSaving(true); setEditResult(null)
+    try {
+      const res = await authFetch('/auth/profile', {
+        method: 'PUT',
+        body: JSON.stringify(editForm),
+      })
+      setPatient(res.data)
+      storage.set('cs_patient', res.data)
+      setEditResult({ success: true, message: 'Profile updated successfully!' })
+      setTimeout(() => setEditPhysical(false), 1200)
+    } catch(e) {
+      setEditResult({ success: false, message: e.message })
+    } finally { setEditSaving(false) }
+  }
   const [otpPopup,  setOtpPopup]    = useState(null)
 
   // Global OTP notification polling — visible on ALL tabs
@@ -895,7 +927,7 @@ function Dashboard({ patient, onLogout }) {
                 <div className="card" style={{ padding:28 }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
                     <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem' }}>Physical Profile</h2>
-                    <button onClick={() => setActiveTab('overview')} style={{ fontSize:'.78rem', color:'var(--c-teal)', fontWeight:600, background:'none', border:'none', cursor:'pointer' }}>Edit →</button>
+                    <button onClick={openEdit} style={{ fontSize:'.78rem', color:'var(--c-teal)', fontWeight:600, background:'none', border:'none', cursor:'pointer' }}>Edit →</button>
                   </div>
                   <div className="physical-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
                     {[
@@ -1042,6 +1074,71 @@ function Dashboard({ patient, onLogout }) {
 
       {/* FAB */}
       <button className="btn fab-btn" onClick={() => setChat(true)} style={{ position:'fixed', bottom:32, right:32, width:56, height:56, borderRadius:18, fontSize:'1.3rem', padding:0, justifyContent:'center', boxShadow:'0 10px 30px rgba(0,180,160,0.4)', zIndex:50, animation:'glow 3s ease-in-out infinite' }} title="AI Assistant">✦</button>
+
+      {/* ── EDIT PHYSICAL PROFILE MODAL ── */}
+      {editPhysical && (
+        <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:'rgba(9,14,26,0.5)', backdropFilter:'blur(8px)' }}>
+          <div style={{ width:'100%', maxWidth:420, borderRadius:24, overflow:'hidden', background:'#fff', boxShadow:'0 32px 80px rgba(0,0,0,0.22)' }}>
+            {/* Header */}
+            <div style={{ background:'linear-gradient(135deg,#060d1f,#0a2428)', padding:'20px 24px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <div>
+                <p style={{ color:'#fff', fontWeight:700, fontFamily:'var(--font-h)', fontSize:'.95rem' }}>Edit Physical Profile</p>
+                <p style={{ color:'rgba(255,255,255,0.4)', fontSize:'.72rem', marginTop:2 }}>BMI will be recalculated automatically</p>
+              </div>
+              <button onClick={() => setEditPhysical(false)} style={{ width:30, height:30, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'none', color:'#fff', cursor:'pointer', fontSize:'1.1rem', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
+            </div>
+            {/* Form */}
+            <div style={{ padding:'24px' }}>
+              {editResult && (
+                <div style={{ marginBottom:16, padding:'10px 14px', borderRadius:10, background: editResult.success ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', border:`1px solid ${editResult.success ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, color: editResult.success ? '#16a34a' : '#dc2626', fontSize:'.82rem', fontWeight:600 }}>
+                  {editResult.message}
+                </div>
+              )}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                {[
+                  { key:'weight_kg',  label:'Weight',     placeholder:'e.g. 70',  suffix:'kg',  type:'number' },
+                  { key:'height_cm',  label:'Height',     placeholder:'e.g. 170', suffix:'cm',  type:'number' },
+                  { key:'blood_type', label:'Blood Type', placeholder:'e.g. O+',  suffix:'',    type:'text'   },
+                  { key:'gender',     label:'Gender',     placeholder:'',         suffix:'',    type:'select' },
+                  { key:'phone',      label:'Phone',      placeholder:'+91...',   suffix:'',    type:'text',  span:2 },
+                ].map(f => (
+                  <div key={f.key} style={{ gridColumn: f.span ? `span ${f.span}` : 'span 1' }}>
+                    <label style={{ display:'block', fontSize:'.75rem', fontWeight:600, color:'var(--c-muted)', marginBottom:6 }}>{f.label}</label>
+                    {f.type === 'select' ? (
+                      <select className="inp" value={editForm[f.key]} onChange={e => setEditForm(p => ({...p, [f.key]: e.target.value}))} style={{ background:'rgba(255,255,255,0.9)' }}>
+                        <option value="">Select</option>
+                        {['Male','Female','Non-binary','Prefer not to say'].map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                    ) : (
+                      <div style={{ position:'relative' }}>
+                        <input className="inp" type={f.type} placeholder={f.placeholder}
+                          value={editForm[f.key]}
+                          onChange={e => setEditForm(p => ({...p, [f.key]: e.target.value}))}
+                          style={{ background:'rgba(255,255,255,0.9)', paddingRight: f.suffix ? 40 : undefined }}
+                        />
+                        {f.suffix && <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:'.78rem', color:'var(--c-muted)', fontWeight:600 }}>{f.suffix}</span>}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Live BMI preview */}
+              {editForm.weight_kg && editForm.height_cm && (
+                <div style={{ marginTop:14, padding:'10px 14px', borderRadius:10, background:'rgba(0,180,160,0.06)', border:'1px solid rgba(0,180,160,0.15)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                  <span style={{ fontSize:'.8rem', color:'var(--c-muted)' }}>New BMI</span>
+                  <span style={{ fontWeight:800, color:'var(--c-teal-dim)', fontFamily:'var(--font-h)', fontSize:'1rem' }}>
+                    {(parseFloat(editForm.weight_kg) / ((parseFloat(editForm.height_cm)/100)**2)).toFixed(1)}
+                  </span>
+                </div>
+              )}
+              <button className="btn" onClick={saveEdit} disabled={editSaving}
+                style={{ width:'100%', marginTop:18, padding:'13px', borderRadius:14, fontSize:'.9rem', opacity: editSaving ? .7 : 1 }}>
+                {editSaving ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── GLOBAL OTP POPUP — visible on all tabs ── */}
       {otpPopup && (
