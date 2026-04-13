@@ -834,6 +834,7 @@ function Dashboard({ patient, onLogout }) {
   const TABS = [
     { id:'overview',      label:'Overview',     icon:'🏠' },
     { id:'appointments',  label:'Appointments', icon:'📅' },
+    { id:'diagnosis',     label:'Diagnosis',    icon:'🩺' },
     { id:'files',         label:'Files',        icon:'📁' },
     { id:'upload',        label:'Upload',       icon:'⬆️'  },
     { id:'chat',          label:'AI Chat',      icon:'✦'   },
@@ -1038,6 +1039,9 @@ function Dashboard({ patient, onLogout }) {
         )}
 
         {/* ── FILES TAB ── */}
+        {/* ── DIAGNOSIS TAB — Patient view ── */}
+        {activeTab === 'diagnosis' && <PatientDiagnosisTab patient={patient} />}
+
         {activeTab === 'files' && (
           <div style={{ maxWidth:800, margin:'0 auto' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
@@ -1291,6 +1295,121 @@ function Landing({ onOpenAuth, onDoctorPortal }) {
 /* ════════════════════════════════════════════════════════════════
    APPOINTMENTS TAB
 ════════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════════
+   PATIENT DIAGNOSIS TAB — view doctor diagnoses
+════════════════════════════════════════════════════════════════ */
+function PatientDiagnosisTab({ patient }) {
+  const [diagnoses, setDiagnoses] = useState([])
+  const [tags,      setTags]      = useState([])
+  const [loading,   setLoading]   = useState(true)
+
+  const TAG_COLORS = {
+    'stable':          '#22c55e',
+    'follow-up':       '#3b82f6',
+    'monitoring':      '#f59e0b',
+    'critical':        '#f97316',
+    'terminally-ill':  '#ef4444',
+    'recovered':       '#00b4a0',
+  }
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      try {
+        const [dRes, tRes] = await Promise.all([
+          authFetch(`/diagnoses/${patient?.pid}`),
+          authFetch(`/diagnoses/tags/${patient?.pid}`).catch(() => ({ data: [] })),
+        ])
+        setDiagnoses(dRes.data || [])
+        setTags(tRes.data || [])
+      } catch(e) {}
+      finally { setLoading(false) }
+    }
+    load()
+  }, [patient?.pid])
+
+  if (loading) return (
+    <div style={{ display:'flex', justifyContent:'center', padding:60 }}>
+      <Spinner size={32} color="var(--c-teal)" />
+    </div>
+  )
+
+  return (
+    <div style={{ maxWidth:800, margin:'0 auto' }}>
+
+      {/* Clinical tags */}
+      {tags.length > 0 && (
+        <div className="card" style={{ padding:22, marginBottom:20 }}>
+          <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'.95rem', marginBottom:14 }}>Clinical Status</h2>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+            {tags.map(t => (
+              <span key={t.id} style={{
+                padding:'6px 16px', borderRadius:50, fontWeight:700, fontSize:'.78rem',
+                background: `${TAG_COLORS[t.tag] || '#94a3b8'}18`,
+                color: TAG_COLORS[t.tag] || '#94a3b8',
+                border: `1.5px solid ${TAG_COLORS[t.tag] || '#94a3b8'}40`,
+              }}>
+                {t.tag.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                <span style={{ fontSize:'.68rem', opacity:.7, marginLeft:6 }}>· {t.doctor_name}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Diagnoses list */}
+      {diagnoses.length === 0 ? (
+        <div className="card" style={{ padding:48, textAlign:'center' }}>
+          <div style={{ fontSize:'2.5rem', marginBottom:12 }}>🩺</div>
+          <p style={{ fontWeight:600, color:'var(--c-dark)', marginBottom:6 }}>No diagnoses yet</p>
+          <p style={{ fontSize:'.82rem', color:'var(--c-muted)' }}>Diagnoses added by your doctor during consultations will appear here.</p>
+        </div>
+      ) : (
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+          {diagnoses.map((d, i) => (
+            <div key={d.id} className="card" style={{ padding:24, borderLeft:`4px solid var(--c-teal)` }}>
+              {/* Header */}
+              <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:14, flexWrap:'wrap', gap:8 }}>
+                <div>
+                  <p style={{ fontWeight:700, fontSize:'.9rem', color:'var(--c-dark)' }}>{d.doctor_name}</p>
+                  <p style={{ fontSize:'.74rem', color:'var(--c-muted)', marginTop:2 }}>{fmtDate(d.created_at)}</p>
+                </div>
+                <span style={{ fontSize:'.72rem', fontWeight:600, color:'var(--c-teal-dim)', background:'rgba(0,180,160,0.08)', border:'1px solid rgba(0,180,160,0.2)', borderRadius:50, padding:'4px 12px' }}>
+                  Consultation #{diagnoses.length - i}
+                </span>
+              </div>
+
+              {/* Diagnosis */}
+              <div style={{ marginBottom:12 }}>
+                <p style={{ fontSize:'.72rem', fontWeight:700, color:'var(--c-muted)', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:5 }}>Diagnosis</p>
+                <p style={{ fontSize:'.88rem', color:'var(--c-dark)', lineHeight:1.6 }}>{d.diagnosis}</p>
+              </div>
+
+              {/* Prescription */}
+              {d.prescription && (
+                <div style={{ marginBottom:12, padding:'12px 14px', borderRadius:10, background:'rgba(99,102,241,0.06)', border:'1px solid rgba(99,102,241,0.15)' }}>
+                  <p style={{ fontSize:'.72rem', fontWeight:700, color:'#6366f1', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:5 }}>Prescription</p>
+                  <p style={{ fontSize:'.85rem', color:'var(--c-dark)', lineHeight:1.6 }}>{d.prescription}</p>
+                </div>
+              )}
+
+              {/* Follow-up */}
+              {d.follow_up_date && (
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:8 }}>
+                  <span style={{ fontSize:'.75rem', fontWeight:600, color:'#f59e0b', background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.25)', borderRadius:50, padding:'3px 12px' }}>
+                    📅 Follow-up: {fmtDate(d.follow_up_date)}
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
   const [doctors,       setDoctors]       = useState([])
   const [appointments,  setAppointments]  = useState([])
@@ -1864,6 +1983,9 @@ function DoctorDashboard({ session, onLogout }) {
         )}
 
         {/* ── FILES TAB ── */}
+        {/* ── DIAGNOSIS TAB — Patient view ── */}
+        {activeTab === 'diagnosis' && <PatientDiagnosisTab patient={patient} />}
+
         {activeTab === 'files' && (
           <div>
             <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.5rem', marginBottom:20 }}>Patient Files</h1>
