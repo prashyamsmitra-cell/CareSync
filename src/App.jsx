@@ -69,8 +69,23 @@ const FILE_TYPES = [
 /* ════════════════════════════════════════════════════════════════
    SHARED COMPONENTS
 ════════════════════════════════════════════════════════════════ */
-function Logo({ size = 34, radius = 10 }) {
-  return <img src="/logo.jpeg" alt="CareSync" style={{ width:size, height:size, borderRadius:radius, objectFit:'contain', display:'block', flexShrink:0 }} />
+function Logo({ size = 34, radius = 10, zoom = 1, fit = 'contain' }) {
+  return (
+    <div style={{ width:size, height:size, borderRadius:radius, overflow:'hidden', flexShrink:0 }}>
+      <img
+        src="/logo.jpeg"
+        alt="CareSync logo"
+        style={{
+          width:'100%',
+          height:'100%',
+          objectFit:fit,
+          objectPosition:'center',
+          transform:`scale(${zoom})`,
+          display:'block',
+        }}
+      />
+    </div>
+  )
 }
 
 function Field({ label, error, hint, children }) {
@@ -1203,9 +1218,8 @@ function Landing({ onOpenAuth, onDoctorPortal }) {
       {/* Nav */}
       <nav style={{ position:'fixed', top:0, left:0, right:0, zIndex:100, transition:'all .3s', background: scrolled ? 'rgba(240,244,248,0.88)' : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? '1px solid rgba(0,0,0,0.06)' : '1px solid transparent' }}>
         <div style={{ maxWidth:1200, margin:'0 auto', padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
-            <Logo size={32} radius={9} />
-            <span style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem', color: scrolled ? 'var(--c-dark)' : '#fff', transition:'.3s' }}>CareSync</span>
+          <div style={{ display:'flex', alignItems:'center', flexShrink:0 }}>
+            <Logo size={48} radius={12} zoom={1.18} fit="cover" />
           </div>
           {/* Desktop nav links */}
           <div className="desktop-tabs" style={{ display:'flex', alignItems:'center', gap:8 }}>
