@@ -861,9 +861,8 @@ function Dashboard({ patient, onLogout }) {
       {/* Desktop Navbar */}
       <nav style={{ position:'fixed', top:0, left:0, right:0, zIndex:100, background:'rgba(240,244,248,0.92)', backdropFilter:'blur(24px)', borderBottom:'1px solid rgba(0,0,0,0.06)', height:64 }}>
         <div className="dash-nav-inner" style={{ maxWidth:1280, margin:'0 auto', padding:'0 28px', height:'100%', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <Logo size={32} radius={9} />
-            <span style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem' }}>CareSync</span>
+          <div style={{ display:'flex', alignItems:'center' }}>
+            <Logo size={48} radius={12} zoom={1.18} fit="cover" />
           </div>
           {/* Desktop tabs */}
           <div className="desktop-tabs" style={{ display:'flex', gap:4 }}>
@@ -1668,9 +1667,8 @@ function DoctorLogin({ onSuccess, onBack }) {
     <div style={{ minHeight:'100vh', background:'linear-gradient(145deg,#060d1f,#0a2428)', display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
       <div style={{ width:'100%', maxWidth:460, background:'rgba(255,255,255,0.97)', borderRadius:28, overflow:'hidden', boxShadow:'0 40px 100px rgba(0,0,0,0.4)' }}>
         <div style={{ background:'linear-gradient(135deg,#060d1f,#0a2428)', padding:'26px 30px 22px' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
-            <Logo size={30} radius={8} />
-            <span style={{ color:'#fff', fontWeight:800, fontFamily:'var(--font-h)', fontSize:'1rem' }}>CareSync</span>
+          <div style={{ display:'flex', alignItems:'center', marginBottom:6 }}>
+            <Logo size={46} radius={12} zoom={1.18} fit="cover" />
           </div>
           <p style={{ color:'rgba(255,255,255,0.5)', fontSize:'.8rem' }}>
             {step === 1 ? 'Doctor Portal — Step 1 of 2: Identify yourself and patient' : 'Doctor Portal — Step 2 of 2: Enter OTP from patient'}
