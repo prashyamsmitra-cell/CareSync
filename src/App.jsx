@@ -50,6 +50,29 @@ const fmtBytes = (b) => {
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '—'
 
+const normalizeDashboardTab = (tab) => {
+  const value = String(tab || '').trim().toLowerCase()
+  if (!value) return null
+
+  const aliases = {
+    home: 'overview',
+    overview: 'overview',
+    appointment: 'appointments',
+    appointments: 'appointments',
+    booking: 'appointments',
+    bookings: 'appointments',
+    diagnosis: 'diagnosis',
+    diagnoses: 'diagnosis',
+    file: 'files',
+    files: 'files',
+    upload: 'upload',
+    uploads: 'upload',
+    chat: 'chat',
+  }
+
+  return aliases[value] || null
+}
+
 /* ════════════════════════════════════════════════════════════════
    CONSTANTS
 ════════════════════════════════════════════════════════════════ */
@@ -645,11 +668,8 @@ function ChatBot({ patient, onClose, onNavigate }) {
       })
       setSessId(data.data.session_id)
       const { reply, doctor, redirect } = data.data
-      setMsgs(m => [...m, { role:'ai', text:reply, doctor: doctor || null, redirect: redirect || null }])
-      // Auto-navigate if chatbot suggests a tab
-      if (redirect && onNavigate) {
-        setTimeout(() => onNavigate(redirect, doctor || null), 800)
-      }
+      const nextTab = normalizeDashboardTab(redirect)
+      setMsgs(m => [...m, { role:'ai', text:reply, doctor: doctor || null, redirect: nextTab }])
     } catch (e) {
       setMsgs(m => [...m, { role:'ai', text:'Sorry, I had trouble responding. Please try again.', doctor:null }])
     } finally { setTyping(false) }
@@ -723,11 +743,11 @@ function ChatBot({ patient, onClose, onNavigate }) {
                   <p style={{ fontSize:'.72rem', color:'var(--c-muted)', marginBottom:6, fontWeight:600 }}>SUGGESTED SPECIALIST</p>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                     <div style={{ width:38, height:38, borderRadius:12, background:'linear-gradient(135deg,#00b4a0,#00897b)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:'.8rem', flexShrink:0 }}>
-                      {m.doctor.name.split(' ').slice(-1)[0][0]}
+                      {(m.doctor.name || 'Doctor').split(' ').slice(-1)[0][0]}
                     </div>
                     <div style={{ flex:1 }}>
-                      <p style={{ fontWeight:700, fontSize:'.84rem', color:'var(--c-dark)' }}>{m.doctor.name}</p>
-                      <p style={{ fontSize:'.74rem', color:'var(--c-muted)' }}>{m.doctor.spec}</p>
+                      <p style={{ fontWeight:700, fontSize:'.84rem', color:'var(--c-dark)' }}>{m.doctor.name || 'Recommended doctor'}</p>
+                      <p style={{ fontSize:'.74rem', color:'var(--c-muted)' }}>{m.doctor.specialization || m.doctor.spec || 'Specialist'}</p>
                     </div>
                     <button
                       className="btn"
@@ -1447,18 +1467,23 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
   // Auto-open booking form and pre-select doctor from chatbot recommendation
   useEffect(() => {
     if (preselectDoctor && doctors.length > 0) {
-      // Match by doctor_id (e.g. DOC001) or by name
+      // Match chatbot doctor payloads coming from either the AI service or our own doctors API.
       const match = doctors.find(d =>
+        d.doctor_id === preselectDoctor.doctor_id ||
         d.doctor_id === preselectDoctor.id ||
+        d.id === preselectDoctor.doctor_id ||
+        d.id === preselectDoctor.id ||
         d.name?.toLowerCase() === preselectDoctor.name?.toLowerCase()
       )
       if (match) {
         setSelDoctor(match.doctor_id || match.id)
         setShowBook(true)
         if (onPreselectUsed) onPreselectUsed()
+      } else {
+        setShowBook(true)
       }
     }
-  }, [preselectDoctor, doctors])
+  }, [preselectDoctor, doctors, onPreselectUsed])
 
   useEffect(() => {
     if (selDoctor && selDate) fetchSlots()
