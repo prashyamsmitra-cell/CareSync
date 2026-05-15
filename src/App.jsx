@@ -697,7 +697,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
   return (
     <div className="chat-wrapper" style={{ position:'fixed', inset:0, zIndex:200, display:'flex', alignItems:'flex-end', justifyContent:'flex-end', padding:'24px' }}>
       <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(9,14,26,0.35)', backdropFilter:'blur(6px)' }} />
-      <div className="chat-panel" style={{ position:'relative', width:'100%', maxWidth:440, height:680, maxHeight:'92vh', borderRadius:28, overflow:'hidden', display:'flex', flexDirection:'column', background:'rgba(255,255,255,0.95)', backdropFilter:'blur(40px)', border:'1px solid rgba(255,255,255,0.65)', boxShadow:'0 32px 80px rgba(0,0,0,0.2)' }}>
+      <div className="chat-panel" style={{ position:'relative', width:'100%', maxWidth:440, height:680, maxHeight:'92vh', borderRadius:28, overflow:'hidden', display:'flex', flexDirection:'column', background:'rgba(9,16,18,0.96)', backdropFilter:'blur(40px)', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 32px 80px rgba(0,0,0,0.38)' }}>
 
         {/* Header */}
         <div style={{ background:'linear-gradient(135deg,#060d1f,#0a2428)', padding:'16px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
@@ -721,7 +721,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
           {msgs.length === 1 && (
             <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:4 }}>
               {chips.map(c => (
-                <button key={c} onClick={() => { setInp(c); }} style={{ padding:'6px 12px', borderRadius:50, border:'1.5px solid rgba(0,180,160,0.3)', background:'rgba(0,180,160,0.06)', color:'var(--c-teal-dim)', fontSize:'.75rem', fontWeight:600, cursor:'pointer', fontFamily:'var(--font-b)' }}>{c}</button>
+                <button key={c} onClick={() => { setInp(c); }} style={{ padding:'6px 12px', borderRadius:50, border:'1.5px solid rgba(0,180,160,0.3)', background:'rgba(0,180,160,0.08)', color:'var(--c-cyan)', fontSize:'.75rem', fontWeight:600, cursor:'pointer', fontFamily:'var(--font-b)' }}>{c}</button>
               ))}
             </div>
           )}
@@ -791,10 +791,10 @@ function ChatBot({ patient, onClose, onNavigate }) {
         </div>
 
         {/* Input */}
-        <div style={{ padding:'12px 14px', borderTop:'1px solid rgba(0,0,0,0.06)', flexShrink:0, background:'rgba(255,255,255,0.8)' }}>
-          <div style={{ display:'flex', gap:8, alignItems:'center', background:'rgba(255,255,255,0.95)', borderRadius:50, border:'1.5px solid rgba(0,0,0,0.08)', padding:'7px 7px 7px 18px' }}>
+        <div style={{ padding:'12px 14px', borderTop:'1px solid rgba(255,255,255,0.08)', flexShrink:0, background:'rgba(255,255,255,0.03)' }}>
+          <div style={{ display:'flex', gap:8, alignItems:'center', background:'rgba(255,255,255,0.04)', borderRadius:50, border:'1.5px solid rgba(255,255,255,0.08)', padding:'7px 7px 7px 18px' }}>
             <input
-              style={{ flex:1, border:'none', outline:'none', background:'transparent', fontFamily:'var(--font-b)', fontSize:'.86rem', color:'var(--c-dark)' }}
+              style={{ flex:1, border:'none', outline:'none', background:'transparent', fontFamily:'var(--font-b)', fontSize:'.86rem', color:'#eef5f5' }}
               placeholder="Describe your symptoms…"
               value={inp}
               onChange={e => setInp(e.target.value)}
@@ -804,7 +804,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
               <svg viewBox="0 0 20 20" fill="currentColor" style={{ width:14, height:14 }}><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
             </button>
           </div>
-          <p style={{ textAlign:'center', fontSize:'.64rem', color:'rgba(0,0,0,0.22)', marginTop:6 }}>CareSync AI · For informational purposes only · Not a substitute for medical advice</p>
+          <p style={{ textAlign:'center', fontSize:'.64rem', color:'rgba(255,255,255,0.34)', marginTop:6 }}>CareSync AI · For informational purposes only · Not a substitute for medical advice</p>
         </div>
       </div>
     </div>
