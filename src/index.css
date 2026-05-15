@@ -695,6 +695,8 @@ h1,h2,h3,h4,h5 { font-family: var(--font-h); }
 }
 
 .app-dashboard {
+  --c-dark: #eef5f5;
+  --c-muted: #9eb1b4;
   background:
     radial-gradient(circle at 18% 0%, rgba(0,212,200,0.08), transparent 20%),
     linear-gradient(180deg, #091012 0%, #0b1112 100%) !important;
