@@ -735,7 +735,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
                 )}
                 <div style={{ maxWidth:'80%', padding:'10px 14px', borderRadius:16, fontSize:'.84rem', lineHeight:1.65, whiteSpace:'pre-line', ...(m.role === 'user'
                   ? { background:'linear-gradient(135deg,#00b4a0,#00d4c8)', color:'#fff', borderBottomRightRadius:4 }
-                  : { background:'#fff', color:'var(--c-dark)', border:'1px solid rgba(0,0,0,0.07)', borderBottomLeftRadius:4, boxShadow:'0 2px 10px rgba(0,0,0,0.05)' }
+                  : { background:'rgba(255,255,255,0.06)', color:'#eef5f5', border:'1px solid rgba(255,255,255,0.08)', borderBottomLeftRadius:4, boxShadow:'0 8px 22px rgba(0,0,0,0.18)' }
                 )}}>
                   {m.text}
                 </div>
@@ -755,14 +755,14 @@ function ChatBot({ patient, onClose, onNavigate }) {
 
               {/* Doctor suggestion card */}
               {m.role === 'ai' && m.doctor && (
-                <div style={{ marginTop:8, marginLeft:33, padding:'12px 14px', borderRadius:14, background:'linear-gradient(135deg,rgba(0,180,160,0.08),rgba(0,212,200,0.05))', border:'1.5px solid rgba(0,180,160,0.25)' }}>
+                <div style={{ marginTop:8, marginLeft:33, padding:'12px 14px', borderRadius:14, background:'linear-gradient(135deg,rgba(0,180,160,0.12),rgba(0,212,200,0.06))', border:'1.5px solid rgba(0,180,160,0.25)' }}>
                   <p style={{ fontSize:'.72rem', color:'var(--c-muted)', marginBottom:6, fontWeight:600 }}>SUGGESTED SPECIALIST</p>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                     <div style={{ width:38, height:38, borderRadius:12, background:'linear-gradient(135deg,#00b4a0,#00897b)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:'.8rem', flexShrink:0 }}>
                       {(m.doctor.name || 'Doctor').split(' ').slice(-1)[0][0]}
                     </div>
                     <div style={{ flex:1 }}>
-                      <p style={{ fontWeight:700, fontSize:'.84rem', color:'var(--c-dark)' }}>{m.doctor.name || 'Recommended doctor'}</p>
+                      <p style={{ fontWeight:700, fontSize:'.84rem', color:'#eef5f5' }}>{m.doctor.name || 'Recommended doctor'}</p>
                       <p style={{ fontSize:'.74rem', color:'var(--c-muted)' }}>{m.doctor.specialization || m.doctor.spec || 'Specialist'}</p>
                     </div>
                     <button
@@ -782,7 +782,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
           {typing && (
             <div style={{ display:'flex', alignItems:'flex-end', gap:7 }}>
               <div style={{ width:26, height:26, borderRadius:8, background:'linear-gradient(135deg,#00b4a0,#00d4c8)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'.6rem', fontWeight:800, flexShrink:0 }}>AI</div>
-              <div style={{ background:'#fff', border:'1px solid rgba(0,0,0,0.07)', borderRadius:16, borderBottomLeftRadius:4, padding:'12px 16px', display:'flex', gap:5, alignItems:'center' }}>
+              <div style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, borderBottomLeftRadius:4, padding:'12px 16px', display:'flex', gap:5, alignItems:'center' }}>
                 {[0,1,2].map(j => <div key={j} className={`d${j+1}`} style={{ width:6, height:6, borderRadius:'50%', background:'var(--c-teal)' }} />)}
               </div>
             </div>
