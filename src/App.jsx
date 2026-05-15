@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import './App.css'
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    CONFIG & HELPERS
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const storage = {
@@ -73,14 +74,29 @@ const normalizeDashboardTab = (tab) => {
   return aliases[value] || null
 }
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    CONSTANTS
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 const FEATURES = [
   { num:'01', title:'AI Assistance',    accent:'#00b4a0', bg:'rgba(0,180,160,0.07)',  desc:'Clinical intelligence that monitors patient data and delivers evidence-based guidance in real time.' },
   { num:'02', title:'Patient Records',  accent:'#3b82f6', bg:'rgba(59,130,246,0.07)', desc:'Unified health records across all care touchpoints — HIPAA-compliant, end-to-end encrypted.' },
   { num:'03', title:'Smart Monitoring', accent:'#f43f5e', bg:'rgba(244,63,94,0.07)',  desc:'Continuous vitals tracking with intelligent alerting and 360° health profile.' },
 ]
+
+const fadeUpMotion = {
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.25 },
+  transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] },
+}
+
+const cardHoverMotion = {
+  initial: { opacity: 0, y: 18 },
+  whileInView: { opacity: 1, y: 0 },
+  whileHover: { y: -6, scale: 1.01 },
+  viewport: { once: true, amount: 0.2 },
+  transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
+}
 
 const FILE_TYPES = [
   { value: 'prescription', label: 'Prescription', icon: '💊', color: '#00b4a0' },
@@ -89,9 +105,9 @@ const FILE_TYPES = [
   { value: 'other',        label: 'Other',        icon: '📄', color: '#94a3b8' },
 ]
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    SHARED COMPONENTS
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 function Logo({ size = 34, radius = 10, zoom = 1, fit = 'contain' }) {
   return (
     <div style={{ width:size, height:size, borderRadius:radius, overflow:'hidden', flexShrink:0 }}>
@@ -150,7 +166,7 @@ function PasswordInp({ error, value, onChange, placeholder = '••••••
         onClick={() => setShow(v => !v)}
         style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--c-muted)', fontSize:'1rem', padding:0, display:'flex', alignItems:'center' }}
       >
-        {show ? '🙈' : '👁'}
+        {show ? '🙈' : '👁️'}
       </button>
     </div>
   )
@@ -195,9 +211,9 @@ function Alert({ type = 'error', children }) {
   )
 }
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    AUTH MODAL — Login / Sign Up (2-step)
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 function AuthModal({ onSuccess, onClose }) {
   const [mode,    setMode]    = useState('login')
   const [step,    setStep]    = useState(1)
@@ -214,7 +230,7 @@ function AuthModal({ onSuccess, onClose }) {
 
   const switchMode = (m) => { setMode(m); setStep(1); setApiErr(''); setLoginErrs({}); setSignupErrs({}) }
 
-  /* ── Login ── */
+  /* -- Login -- */
   const handleLogin = async () => {
     const errs = {}
     if (!loginForm.email)    errs.email    = 'Email required'
@@ -237,7 +253,7 @@ function AuthModal({ onSuccess, onClose }) {
     finally { setLoading(false) }
   }
 
-  /* ── Signup step 1 validation ── */
+  /* -- Signup step 1 validation -- */
   const validateStep1 = () => {
     const e = {}
     if (!signupForm.name.trim())       e.name     = 'Full name required'
@@ -250,7 +266,7 @@ function AuthModal({ onSuccess, onClose }) {
     return e
   }
 
-  /* ── Signup submit ── */
+  /* -- Signup submit -- */
   const handleSignup = async () => {
     setLoading(true); setApiErr('')
     try {
@@ -278,7 +294,7 @@ function AuthModal({ onSuccess, onClose }) {
     finally { setLoading(false) }
   }
 
-  /* ── Live BMI preview ── */
+  /* -- Live BMI preview -- */
   const liveBMI = signupForm.weight_kg && signupForm.height_cm
     ? (parseFloat(signupForm.weight_kg) / ((parseFloat(signupForm.height_cm) / 100) ** 2)).toFixed(1)
     : null
@@ -323,7 +339,7 @@ function AuthModal({ onSuccess, onClose }) {
 
           {apiErr && <Alert type="error">{apiErr}</Alert>}
 
-          {/* ── LOGIN ── */}
+          {/* -- LOGIN -- */}
           {mode === 'login' && (<>
             <Field label="Email address" error={loginErrs.email}>
               <Inp error={loginErrs.email} type="email" placeholder="you@hospital.com" value={loginForm.email} onChange={e => setL('email', e.target.value)} />
@@ -336,7 +352,7 @@ function AuthModal({ onSuccess, onClose }) {
             </button>
           </>)}
 
-          {/* ── SIGNUP STEP 1 ── */}
+          {/* -- SIGNUP STEP 1 -- */}
           {mode === 'signup' && step === 1 && (<>
             <Field label="Full name" error={signupErrs.name}>
               <Inp error={signupErrs.name} placeholder="Sarah Johnson" value={signupForm.name} onChange={e => setS('name', e.target.value)} />
@@ -372,7 +388,7 @@ function AuthModal({ onSuccess, onClose }) {
             </button>
           </>)}
 
-          {/* ── SIGNUP STEP 2 ── */}
+          {/* -- SIGNUP STEP 2 -- */}
           {mode === 'signup' && step === 2 && (<>
             <Alert type="info">Your metrics help us calculate BMI and personalise your dashboard. You can update these later.</Alert>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
@@ -406,7 +422,7 @@ function AuthModal({ onSuccess, onClose }) {
             <div style={{ display:'flex', gap:10 }}>
               <button className="btn-ow" onClick={() => setStep(1)} style={{ padding:'13px 20px', fontSize:'.9rem' }}>← Back</button>
               <button className="btn" onClick={handleSignup} disabled={loading} style={{ flex:1, padding:'14px', justifyContent:'center', fontSize:'1rem', borderRadius:14, gap:8, opacity: loading ? .7 : 1 }}>
-                {loading ? <><Spinner /> Creating account…</> : 'Create Account ✓'}
+                {loading ? <><Spinner /> Creating account…</> : 'Create Account →'}
               </button>
             </div>
           </>)}
@@ -423,9 +439,9 @@ function AuthModal({ onSuccess, onClose }) {
   )
 }
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    DRAG & DROP FILE UPLOADER
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 function FileUploader({ pid, onUploaded }) {
   const [dragging,  setDragging]  = useState(false)
   const [fileType,  setFileType]  = useState('prescription')
@@ -519,7 +535,7 @@ function FileUploader({ pid, onUploaded }) {
         }}
       >
         <input ref={inputRef} type="file" multiple accept=".jpg,.jpeg,.png,.webp,.pdf" style={{ display:'none' }} onChange={e => addFiles(e.target.files)} />
-        <div style={{ fontSize:'2rem', marginBottom:10 }}>📂</div>
+        <div style={{ fontSize:'2rem', marginBottom:10 }}>📤</div>
         <p style={{ fontWeight:600, color:'var(--c-dark)', marginBottom:4 }}>
           {dragging ? 'Drop files here' : 'Drag & drop files or click to browse'}
         </p>
@@ -531,7 +547,7 @@ function FileUploader({ pid, onUploaded }) {
         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
           {queued.map((f, i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', background:'rgba(0,0,0,0.03)', borderRadius:12, border:'1px solid rgba(0,0,0,0.06)' }}>
-              <span style={{ fontSize:'1.1rem' }}>{f.type === 'application/pdf' ? '📄' : '🖼️'}</span>
+              <span style={{ fontSize:'1.1rem' }}>{f.type === 'application/pdf' ? '📕' : '🗂️'}</span>
               <div style={{ flex:1, minWidth:0 }}>
                 <p style={{ fontWeight:600, fontSize:'.84rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</p>
                 <p style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>{fmtBytes(f.size)}</p>
@@ -568,9 +584,9 @@ function FileUploader({ pid, onUploaded }) {
   )
 }
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    FILE LIBRARY — Shows uploaded files
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 function FileLibrary({ files, loading, onDelete, onRefresh }) {
   const [deleting, setDeleting] = useState(null)
 
@@ -592,7 +608,7 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
 
   if (!files.length) return (
     <div style={{ textAlign:'center', padding:'40px 0', color:'var(--c-muted)' }}>
-      <div style={{ fontSize:'2.5rem', marginBottom:10 }}>📭</div>
+      <div style={{ fontSize:'2.5rem', marginBottom:10 }}>🗃️</div>
       <p style={{ fontWeight:600 }}>No files yet</p>
       <p style={{ fontSize:'.82rem', marginTop:4 }}>Upload your first prescription or report above.</p>
     </div>
@@ -617,13 +633,13 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
                   <a href={f.file_url} target="_blank" rel="noreferrer"
                     style={{ width:34, height:34, borderRadius:10, background:'rgba(0,180,160,0.1)', display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', fontSize:'.85rem', transition:'all .2s' }}
                     onMouseEnter={e => e.currentTarget.style.background='rgba(0,180,160,0.2)'}
-                    onMouseLeave={e => e.currentTarget.style.background='rgba(0,180,160,0.1)'}>👁</a>
+                    onMouseLeave={e => e.currentTarget.style.background='rgba(0,180,160,0.1)'}>👁️</a>
                 )}
                 <button onClick={() => handleDelete(f)} disabled={deleting === f.id}
                   style={{ width:34, height:34, borderRadius:10, background:'rgba(239,68,68,0.08)', border:'none', cursor:'pointer', fontSize:'.85rem', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .2s', opacity: deleting===f.id?.5:1 }}
                   onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,0.18)'}
                   onMouseLeave={e => e.currentTarget.style.background='rgba(239,68,68,0.08)'}>
-                  {deleting === f.id ? <Spinner size={14} color="#ef4444" /> : '🗑'}
+                  {deleting === f.id ? <Spinner size={14} color="#ef4444" /> : '🗑️'}
                 </button>
               </div>
             </div>
@@ -642,9 +658,9 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
   )
 }
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    AI CHATBOT PANEL
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 function ChatBot({ patient, onClose, onNavigate }) {
   const [msgs,   setMsgs]   = useState([{ role:'ai', text:"Hi! I'm CareSync AI, your clinical assistant. Describe your symptoms and I'll help you understand them and suggest the right doctor.", doctor:null }])
   const [inp,    setInp]    = useState('')
@@ -686,7 +702,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
         {/* Header */}
         <div style={{ background:'linear-gradient(135deg,#060d1f,#0a2428)', padding:'16px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ width:40, height:40, borderRadius:13, background:'rgba(0,180,160,0.2)', border:'1px solid rgba(0,180,160,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem' }}>✦</div>
+            <div style={{ width:40, height:40, borderRadius:13, background:'rgba(0,180,160,0.2)', border:'1px solid rgba(0,180,160,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem' }}>🤖</div>
             <div>
               <p style={{ color:'#fff', fontWeight:700, fontFamily:'var(--font-h)', fontSize:'.9rem' }}>CareSync AI</p>
               <div style={{ display:'flex', alignItems:'center', gap:5, marginTop:2 }}>
@@ -795,9 +811,9 @@ function ChatBot({ patient, onClose, onNavigate }) {
   )
 }
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    DASHBOARD — Per-patient, personalised
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 function Dashboard({ patient, onLogout }) {
   const [activeTab, setActiveTab]   = useState('overview')
   const [chat,      setChat]        = useState(false)
@@ -871,15 +887,15 @@ function Dashboard({ patient, onLogout }) {
     { id:'appointments',  label:'Appointments', icon:'📅' },
     { id:'diagnosis',     label:'Diagnosis',    icon:'🩺' },
     { id:'files',         label:'Files',        icon:'📁' },
-    { id:'upload',        label:'Upload',       icon:'⬆️'  },
-    { id:'chat',          label:'AI Chat',      icon:'✦'   },
+    { id:'upload',        label:'Upload',       icon:'📤'  },
+    { id:'chat',          label:'AI Chat',      icon:'🤖'   },
   ]
 
   return (
-    <div style={{ minHeight:'100vh', background:'var(--c-bg)', paddingTop:76 }}>
+    <div className="app-dashboard" style={{ minHeight:'100vh', background:'var(--c-bg)', paddingTop:76 }}>
 
       {/* Desktop Navbar */}
-      <nav style={{ position:'fixed', top:0, left:0, right:0, zIndex:100, background:'rgba(240,244,248,0.92)', backdropFilter:'blur(24px)', borderBottom:'1px solid rgba(0,0,0,0.06)', height:64 }}>
+      <nav className="app-dashboard-nav" style={{ position:'fixed', top:0, left:0, right:0, zIndex:100, background:'rgba(9,16,18,0.88)', backdropFilter:'blur(24px)', borderBottom:'1px solid rgba(255,255,255,0.08)', height:72 }}>
         <div className="dash-nav-inner" style={{ maxWidth:1280, margin:'0 auto', padding:'0 28px', height:'100%', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div style={{ display:'flex', alignItems:'center' }}>
             <Logo size={48} radius={12} zoom={1.18} fit="cover" />
@@ -887,16 +903,16 @@ function Dashboard({ patient, onLogout }) {
           {/* Desktop tabs */}
           <div className="desktop-tabs" style={{ display:'flex', gap:4 }}>
             {TABS.filter(t => t.id !== 'chat').map(t => (
-              <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 16px', borderRadius:50, border:'none', cursor:'pointer', fontFamily:'var(--font-b)', fontWeight:600, fontSize:'.83rem', transition:'all .2s', background: activeTab === t.id ? 'rgba(0,180,160,0.12)' : 'transparent', color: activeTab === t.id ? 'var(--c-teal)' : 'var(--c-muted)' }}>
+              <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:50, border:'none', cursor:'pointer', fontFamily:'var(--font-b)', fontWeight:600, fontSize:'.83rem', transition:'all .2s', background: activeTab === t.id ? 'rgba(31,227,229,0.14)' : 'transparent', color: activeTab === t.id ? 'var(--c-cyan)' : 'rgba(255,255,255,0.44)' }}>
                 <span>{t.icon}</span> {t.label}
               </button>
             ))}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <button className="btn desktop-tabs" style={{ padding:'8px 18px', fontSize:'.82rem', display:'inline-flex' }} onClick={() => setChat(true)}>✦ AI Chat</button>
-            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 12px 6px 6px', borderRadius:50, border:'1px solid rgba(0,0,0,0.08)', background:'rgba(255,255,255,0.8)', cursor:'pointer' }} onClick={onLogout}>
+            <button className="btn desktop-tabs" style={{ padding:'8px 18px', fontSize:'.82rem', display:'inline-flex' }} onClick={() => setChat(true)}>🤖 AI Chat</button>
+            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 12px 6px 6px', borderRadius:50, border:'1px solid rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.06)', cursor:'pointer' }} onClick={onLogout}>
               <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#00b4a0,#00d4c8)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:'.78rem' }}>{initials}</div>
-              <span className="desktop-tabs" style={{ display:'inline', fontSize:'.8rem', fontWeight:600, color:'var(--c-muted)' }}>Sign out</span>
+              <span className="desktop-tabs" style={{ display:'inline', fontSize:'.8rem', fontWeight:600, color:'rgba(255,255,255,0.68)' }}>Sign out</span>
             </div>
           </div>
         </div>
@@ -924,15 +940,15 @@ function Dashboard({ patient, onLogout }) {
 
       <div className="dashboard-content" style={{ maxWidth:1280, margin:'0 auto', padding:'24px 28px 60px' }}>
 
-        {/* ── OVERVIEW TAB ── */}
+        {/* -- OVERVIEW TAB -- */}
         {activeTab === 'overview' && (
           <>
             {/* Welcome banner */}
-            <div className="welcome-banner" style={{ borderRadius:24, overflow:'hidden', marginBottom:26, position:'relative', background:'linear-gradient(135deg,#060d1f 0%,#0a2428 60%,#061a1a 100%)', padding:'36px 44px' }}>
+            <motion.div className="welcome-banner" {...fadeUpMotion} style={{ borderRadius:24, overflow:'hidden', marginBottom:26, position:'relative', background:'linear-gradient(135deg,#060d1f 0%,#0a2428 60%,#061a1a 100%)', padding:'36px 44px' }}>
               <div className="dotgrid" style={{ position:'absolute', inset:0, opacity:.35 }} />
               <div style={{ position:'absolute', top:-50, right:-50, width:260, height:260, borderRadius:'50%', background:'radial-gradient(circle,rgba(0,180,160,0.22) 0%,transparent 70%)' }} />
               <div style={{ position:'relative', zIndex:1 }}>
-                <p style={{ color:'rgba(255,255,255,0.45)', fontSize:'.8rem', fontWeight:500, marginBottom:4, letterSpacing:'.04em', textTransform:'uppercase' }}>Good afternoon 👋</p>
+                <p style={{ color:'rgba(255,255,255,0.45)', fontSize:'.8rem', fontWeight:500, marginBottom:4, letterSpacing:'.04em', textTransform:'uppercase' }}>Good afternoon ☀️</p>
                 <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'clamp(1.5rem,3vw,2rem)', color:'#fff', marginBottom:6 }}>
                   Welcome back, <span className="gt">{patient?.name?.split(' ')[0]}</span>
                 </h1>
@@ -952,17 +968,17 @@ function Dashboard({ patient, onLogout }) {
                   <AppointmentCountBadge pid={patient?.pid} onBook={() => setActiveTab('appointments')} />
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             <div className="dashboard-grid" style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:22 }}>
               {/* Left column */}
               <div style={{ display:'flex', flexDirection:'column', gap:22 }}>
 
                 {/* Physical stats */}
-                <div className="card" style={{ padding:28 }}>
+                <motion.div className="card" {...cardHoverMotion} style={{ padding:28 }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
                     <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem' }}>Physical Profile</h2>
-                    <button onClick={openEdit} style={{ fontSize:'.78rem', color:'var(--c-teal)', fontWeight:600, background:'none', border:'none', cursor:'pointer' }}>Edit →</button>
+                    <button onClick={openEdit} style={{ fontSize:'.78rem', color:'var(--c-teal)', fontWeight:600, background:'none', border:'none', cursor:'pointer' }}>Edit ✏️</button>
                   </div>
                   <div className="physical-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
                     {[
@@ -981,10 +997,10 @@ function Dashboard({ patient, onLogout }) {
                       </div>
                     ))}
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Vital signs — real values from DB */}
-                <div className="card" style={{ padding:28 }}>
+                <motion.div className="card" {...cardHoverMotion} transition={{ ...cardHoverMotion.transition, delay: 0.06 }} style={{ padding:28 }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
                     <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem' }}>Vital Signs</h2>
                     {patient?.vitals_updated_at
@@ -994,10 +1010,10 @@ function Dashboard({ patient, onLogout }) {
                   </div>
                   <div className="vitals-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
                     {[
-                      { label:'Heart Rate',     unit:'bpm',  icon:'♥', color:'#f43f5e', val: patient?.heart_rate     },
-                      { label:'Blood Pressure', unit:'mmHg', icon:'◎', color:'#6366f1', val: patient?.blood_pressure },
-                      { label:'SpO₂',           unit:'%',    icon:'◉', color:'#3b82f6', val: patient?.spo2           },
-                      { label:'Temperature',    unit:'°F',   icon:'◈', color:'#f59e0b', val: patient?.temperature    },
+                      { label:'Heart Rate',     unit:'bpm',  icon:'❤️', color:'#f43f5e', val: patient?.heart_rate     },
+                      { label:'Blood Pressure', unit:'mmHg', icon:'🫀', color:'#6366f1', val: patient?.blood_pressure },
+                      { label:'SpO2',           unit:'%',    icon:'🫁', color:'#3b82f6', val: patient?.spo2           },
+                      { label:'Temperature',    unit:'°F',   icon:'🌡️', color:'#f59e0b', val: patient?.temperature    },
                     ].map(m => (
                       <div key={m.label} style={{ background: m.val ? `${m.color}08` : 'rgba(0,0,0,0.02)', borderRadius:16, padding:'18px 14px', textAlign:'center', border:`1px solid ${m.val ? m.color+'25' : 'rgba(0,0,0,0.06)'}` }}>
                         <div style={{ fontSize:'1.3rem', color:m.color, marginBottom:5, opacity: m.val ? 1 : .4 }}>{m.icon}</div>
@@ -1017,14 +1033,14 @@ function Dashboard({ patient, onLogout }) {
                       🩺 Vital signs are recorded by your doctor during a consultation
                     </p>
                   )}
-                </div>
+                </motion.div>
               </div>
 
               {/* Right column */}
               <div style={{ display:'flex', flexDirection:'column', gap:22 }}>
 
                 {/* Patient info card */}
-                <div className="card" style={{ padding:24 }}>
+                <motion.div className="card" {...cardHoverMotion} transition={{ ...cardHoverMotion.transition, delay: 0.1 }} style={{ padding:24 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
                     <div style={{ width:56, height:56, borderRadius:18, background:'linear-gradient(135deg,#00b4a0,#00d4c8)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:'1.15rem', boxShadow:'0 6px 20px rgba(0,180,160,0.3)' }}>{initials}</div>
                     <div>
@@ -1046,16 +1062,16 @@ function Dashboard({ patient, onLogout }) {
                       </div>
                     ))}
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Quick actions */}
-                <div className="card" style={{ padding:22 }}>
+                <motion.div className="card" {...cardHoverMotion} transition={{ ...cardHoverMotion.transition, delay: 0.14 }} style={{ padding:22 }}>
                   <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'.95rem', marginBottom:14 }}>Quick Actions</h2>
                   <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                     {[
-                      { label:'Upload Prescription', icon:'💊', tab:'upload' },
+                      { label:'Upload Prescription', icon:'📤', tab:'upload' },
                       { label:'View My Files',       icon:'📁', tab:'files'  },
-                      { label:'Ask AI Assistant',    icon:'✦',  tab:null    },
+                      { label:'Ask AI Assistant',    icon:'🤖',  tab:null    },
                     ].map(a => (
                       <button key={a.label} onClick={() => a.tab ? setActiveTab(a.tab) : setChat(true)} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:11, border:'1.5px solid rgba(0,0,0,0.07)', background:'rgba(255,255,255,0.6)', cursor:'pointer', fontFamily:'var(--font-b)', fontWeight:600, fontSize:'.82rem', transition:'all .2s', textAlign:'left' }}
                         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.95)'; e.currentTarget.style.transform = 'translateX(3px)' }}
@@ -1066,14 +1082,14 @@ function Dashboard({ patient, onLogout }) {
                       </button>
                     ))}
                   </div>
-                </div>
+                </motion.div>
               </div>
             </div>
           </>
         )}
 
-        {/* ── FILES TAB ── */}
-        {/* ── DIAGNOSIS TAB — Patient view ── */}
+        {/* -- FILES TAB -- */}
+        {/* -- DIAGNOSIS TAB — Patient view -- */}
         {activeTab === 'diagnosis' && <PatientDiagnosisTab patient={patient} />}
 
         {activeTab === 'files' && (
@@ -1091,10 +1107,10 @@ function Dashboard({ patient, onLogout }) {
           </div>
         )}
 
-        {/* ── APPOINTMENTS TAB ── */}
+        {/* -- APPOINTMENTS TAB -- */}
         {activeTab === 'appointments' && <AppointmentsTab patient={patient} preselectDoctor={preselectDoctor} onPreselectUsed={() => setPreselectDoctor(null)} />}
 
-        {/* ── UPLOAD TAB ── */}
+        {/* -- UPLOAD TAB -- */}
         {activeTab === 'upload' && (
           <div style={{ maxWidth:680, margin:'0 auto' }}>
             <div style={{ marginBottom:22 }}>
@@ -1111,9 +1127,9 @@ function Dashboard({ patient, onLogout }) {
       </div>
 
       {/* FAB */}
-      <button className="btn fab-btn" onClick={() => setChat(true)} style={{ position:'fixed', bottom:32, right:32, width:56, height:56, borderRadius:18, fontSize:'1.3rem', padding:0, justifyContent:'center', boxShadow:'0 10px 30px rgba(0,180,160,0.4)', zIndex:50, animation:'glow 3s ease-in-out infinite' }} title="AI Assistant">✦</button>
+      <button className="btn fab-btn" onClick={() => setChat(true)} style={{ position:'fixed', bottom:32, right:32, width:56, height:56, borderRadius:18, fontSize:'1.3rem', padding:0, justifyContent:'center', boxShadow:'0 10px 30px rgba(0,180,160,0.4)', zIndex:50, animation:'glow 3s ease-in-out infinite' }} title="AI Assistant">🤖</button>
 
-      {/* ── EDIT PHYSICAL PROFILE MODAL ── */}
+      {/* -- EDIT PHYSICAL PROFILE MODAL -- */}
       {editPhysical && (
         <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:'rgba(9,14,26,0.5)', backdropFilter:'blur(8px)' }}>
           <div style={{ width:'100%', maxWidth:420, borderRadius:24, overflow:'hidden', background:'#fff', boxShadow:'0 32px 80px rgba(0,0,0,0.22)' }}>
@@ -1178,7 +1194,7 @@ function Dashboard({ patient, onLogout }) {
         </div>
       )}
 
-      {/* ── GLOBAL OTP POPUP — visible on all tabs ── */}
+      {/* -- GLOBAL OTP POPUP — visible on all tabs -- */}
       {otpPopup && (
         <div style={{ position:'fixed', top:16, right:16, zIndex:999, width:320, borderRadius:20, overflow:'hidden', boxShadow:'0 20px 60px rgba(0,0,0,0.25)', animation:'slideIn .3s ease' }}>
           {/* Header */}
@@ -1199,7 +1215,7 @@ function Dashboard({ patient, onLogout }) {
               <p style={{ fontFamily:'var(--font-h)', fontWeight:900, fontSize:'2.4rem', letterSpacing:'.3em', color:'var(--c-dark)', lineHeight:1 }}>{otpPopup.plain_otp}</p>
             </div>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-              <p style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>⏱ Valid for 10 minutes</p>
+              <p style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>⏱️ Valid for 10 minutes</p>
               <button
                 onClick={() => { navigator.clipboard?.writeText(otpPopup.plain_otp) }}
                 style={{ fontSize:'.72rem', color:'var(--c-teal-dim)', fontWeight:600, background:'rgba(0,180,160,0.08)', border:'1px solid rgba(0,180,160,0.2)', borderRadius:50, padding:'3px 10px', cursor:'pointer', fontFamily:'var(--font-b)' }}>
@@ -1221,9 +1237,9 @@ function Dashboard({ patient, onLogout }) {
   )
 }
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    LANDING PAGE
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 function Landing({ onOpenAuth, onDoctorPortal }) {
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
@@ -1233,105 +1249,200 @@ function Landing({ onOpenAuth, onDoctorPortal }) {
   }, [])
 
   return (
-    <div style={{ background:'var(--c-bg)', minHeight:'100vh' }}>
-      {/* Nav */}
-      <nav style={{ position:'fixed', top:0, left:0, right:0, zIndex:100, transition:'all .3s', background: scrolled ? 'rgba(240,244,248,0.88)' : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? '1px solid rgba(0,0,0,0.06)' : '1px solid transparent' }}>
-        <div style={{ maxWidth:1200, margin:'0 auto', padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div style={{ display:'flex', alignItems:'center', flexShrink:0 }}>
+    <div className="app-landing">
+      <nav className="landing-nav" style={{ position:'fixed', top:0, left:0, right:0, zIndex:100, transition:'all .3s', background: scrolled ? 'rgba(9,16,18,0.92)' : 'rgba(9,16,18,0.26)', backdropFilter: 'blur(20px)', borderBottom: scrolled ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent' }}>
+        <div className="landing-nav-inner" style={{ maxWidth:1280, margin:'0 auto', padding:'16px 28px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:16 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12, flexShrink:0 }}>
             <Logo size={48} radius={12} zoom={1.18} fit="cover" />
+            <span className="landing-wordmark">CareSync</span>
           </div>
-          {/* Desktop nav links */}
-          <div className="desktop-tabs" style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <button className="btn" style={{ padding:'9px 20px', fontSize:'.82rem' }} onClick={onOpenAuth}>Get Started</button>
+          <div className="landing-nav-links desktop-tabs">
+            {[
+              ['#home', 'Home'],
+              ['#clinical-ai', 'Clinical AI'],
+              ['#providers', 'For Providers'],
+              ['#security', 'Security'],
+            ].map(([href, label], index) => (
+              <motion.a
+                key={href}
+                href={href}
+                className="landing-nav-link"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.3, delay: 0.04 * index, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {label}
+              </motion.a>
+            ))}
           </div>
-          {/* Mobile — just Get Started button */}
-          <div className="mobile-only" style={{ display:'none' }}>
-            <button className="btn" style={{ padding:'8px 16px', fontSize:'.78rem' }} onClick={onOpenAuth}>Get Started</button>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <button className="btn-ow desktop-tabs" style={{ fontSize:'.92rem', padding:'12px 24px' }} onClick={onDoctorPortal}>Doctor Portal</button>
+            <button className="btn" style={{ padding:'10px 20px', fontSize:'.82rem' }} onClick={onOpenAuth}>Get Started</button>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', position:'relative', overflow:'hidden', background:'linear-gradient(145deg,#060d1f 0%,#0a2428 40%,#061a1a 100%)' }}>
-        <div className="dotgrid" style={{ position:'absolute', inset:0, opacity:.55 }} />
-        <div style={{ position:'absolute', top:'15%', left:'8%', width:480, height:480, borderRadius:'50%', background:'radial-gradient(circle,rgba(0,180,160,0.2) 0%,transparent 70%)', animation:'float 7s ease-in-out infinite' }} />
-        <div style={{ position:'absolute', bottom:'10%', right:'5%', width:360, height:360, borderRadius:'50%', background:'radial-gradient(circle,rgba(0,212,200,0.14) 0%,transparent 70%)', animation:'floatR 9s ease-in-out infinite' }} />
-        <div style={{ position:'absolute', top:'22%', right:'13%', width:160, height:160, border:'1px dashed rgba(0,180,160,0.22)', borderRadius:'50%', animation:'spin 20s linear infinite' }} />
-
-
-        <div style={{ position:'relative', zIndex:2, textAlign:'center', padding:'0 24px', maxWidth:820, margin:'0 auto' }}>
-          <div className="pill fu" style={{ marginBottom:26, color:'rgba(0,212,200,0.9)', borderColor:'rgba(0,180,160,0.3)', background:'rgba(0,180,160,0.08)' }}>
-            <span style={{ width:6, height:6, borderRadius:'50%', background:'#00d4c8', display:'inline-block' }} />
-            AI-Powered Clinical Intelligence
+      <section id="home" className="landing-hero-section">
+        <div className="landing-grid" style={{ maxWidth:1280, margin:'0 auto', padding:'140px 28px 88px', position:'relative', zIndex:2 }}>
+          <div className="landing-copy">
+            <div className="pill fu landing-hero-pill">
+              <span style={{ width:6, height:6, borderRadius:'50%', background:'#00d4c8', display:'inline-block' }} />
+              AI-Powered Clinical Intelligence
+            </div>
+            <h1 className="fu2 landing-headline">
+              Your Health,
+              <span> Intelligently Managed</span>
+            </h1>
+            <p className="fu3 landing-subcopy">
+              Experience the next frontier of medical care. CareSync bridges traditional clinical reliability with
+              cutting-edge AI, secure patient records, and doctor-verified access workflows.
+            </p>
+            <div className="fu4 landing-cta-row">
+              <button className="btn" style={{ fontSize:'1rem', padding:'15px 34px' }} onClick={onOpenAuth}>Get Started</button>
+              <button className="btn-ow" style={{ fontSize:'1rem', padding:'15px 34px' }} onClick={onDoctorPortal}>Doctor Portal</button>
+            </div>
+            <div className="landing-stat-row fu4">
+              {[['Live', 'Patient Data'], ['OTP', 'Doctor Access'], ['HIPAA', 'Aligned Security']].map(([v, l]) => (
+                <div key={l}>
+                  <strong>{v}</strong>
+                  <span>{l}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <h1 className="fu2" style={{ fontFamily:'var(--font-h)', fontWeight:900, lineHeight:1.05, fontSize:'clamp(3rem,8vw,6rem)', color:'#fff', letterSpacing:'-0.03em', marginBottom:22 }}>
-            Care<span className="gt">Sync</span>
-          </h1>
-          <p className="fu3" style={{ fontSize:'clamp(.95rem,2vw,1.18rem)', color:'rgba(255,255,255,0.55)', maxWidth:540, margin:'0 auto 40px', lineHeight:1.65 }}>
-            Your personal health record — securely stored, intelligently managed, always accessible.
-          </p>
-          <div className="fu4" style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
-            <button className="btn" style={{ fontSize:'1rem', padding:'15px 34px' }} onClick={onOpenAuth}>
-              Get Started
-              <svg viewBox="0 0 20 20" fill="currentColor" style={{ width:15, height:15 }}><path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" /></svg>
-            </button>
-            <button className="btn-ow" style={{ fontSize:'1rem', padding:'15px 34px' }} onClick={onDoctorPortal}>Doctor Portal</button>
-          </div>
-          <div className="fu4" style={{ display:'flex', justifyContent:'center', gap:44, marginTop:56, flexWrap:'wrap' }}>
-            {[['6','Specialist Doctors'],['End-to-End','Encryption'],['OTP','Secured Access']].map(([v, l]) => (
-              <div key={l} style={{ textAlign:'center' }}>
-                <div style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.7rem', color:'#fff', marginBottom:2 }}>{v}</div>
-                <div style={{ fontSize:'.72rem', color:'rgba(255,255,255,0.35)', letterSpacing:'.06em', textTransform:'uppercase' }}>{l}</div>
+
+          <motion.div className="landing-preview fu3" {...fadeUpMotion} transition={{ ...fadeUpMotion.transition, delay: 0.12 }}>
+            <motion.div className="landing-preview-frame" whileHover={{ y: -8, rotate: -1.5 }} transition={{ duration: 0.35 }}>
+              <div className="landing-preview-glow" />
+              <div className="landing-preview-panel">
+                <div className="preview-topbar">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div className="preview-body">
+                  <div className="preview-side">
+                    <div />
+                    <div />
+                    <div />
+                  </div>
+                  <div className="preview-main">
+                    <div className="preview-wave" />
+                    <div className="preview-bars">
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+                    <div className="preview-cards">
+                      <div />
+                      <div />
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-        <div style={{ position:'absolute', bottom:32, left:'50%', transform:'translateX(-50%)', display:'flex', flexDirection:'column', alignItems:'center', gap:7, color:'rgba(255,255,255,0.28)', fontSize:'.7rem', letterSpacing:'.1em', textTransform:'uppercase' }}>
-          Scroll<div style={{ width:1, height:40, background:'linear-gradient(to bottom,rgba(0,180,160,0.5),transparent)' }} />
+              <div className="landing-confidence">
+                <span>AI Confidence</span>
+                <strong>99.8%</strong>
+              </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Features */}
-      <section style={{ padding:'100px 32px', maxWidth:1100, margin:'0 auto' }}>
-        <div style={{ textAlign:'center', marginBottom:70 }}>
-          <div className="pill fi" style={{ marginBottom:16, display:'inline-flex' }}>Platform</div>
-          <h2 className="fu" style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'clamp(1.8rem,4vw,2.8rem)', letterSpacing:'-.025em', marginBottom:14 }}>Built for modern <span className="gt">healthcare</span></h2>
-          <p className="fu2" style={{ color:'var(--c-muted)', fontSize:'1rem', maxWidth:480, margin:'0 auto', lineHeight:1.65 }}>A complete suite of clinical tools designed to elevate every patient interaction.</p>
-        </div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:24 }}>
+      <section id="clinical-ai" className="landing-features-wrap">
+        <motion.div className="landing-section-copy" {...fadeUpMotion}>
+          <h2>Unrivaled Clinical Intelligence</h2>
+          <p>A complete suite of clinical tools designed to elevate every patient interaction without compromising privacy or speed.</p>
+        </motion.div>
+        <div className="landing-feature-grid">
           {FEATURES.map((f, i) => (
-            <div key={i} className="card card-h fu" style={{ padding:32, animationDelay:`${i * .1}s`, position:'relative', overflow:'hidden' }}>
-              <div style={{ position:'absolute', top:0, right:0, fontFamily:'var(--font-h)', fontWeight:900, fontSize:'4.5rem', color:f.accent, opacity:.05, lineHeight:1, userSelect:'none' }}>{f.num}</div>
-              <div style={{ width:50, height:50, borderRadius:14, background:f.bg, display:'flex', alignItems:'center', justifyContent:'center', color:f.accent, marginBottom:20, fontSize:'1.4rem' }}>
-                {f.num === '01' ? '✦' : f.num === '02' ? '📋' : '💓'}
+            <motion.div key={i} className={`landing-feature-card landing-feature-card-${i + 1}`} {...cardHoverMotion} transition={{ ...cardHoverMotion.transition, delay: i * 0.06 }}>
+              <div className="landing-feature-mark">{f.num}</div>
+              <div className="landing-feature-icon">
+                {f.num === '01' ? '🧠' : f.num === '02' ? '🗂️' : '📈'}
               </div>
-              <h3 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.1rem', marginBottom:10 }}>{f.title}</h3>
-              <p style={{ color:'var(--c-muted)', lineHeight:1.65, fontSize:'.88rem' }}>{f.desc}</p>
-            </div>
+              <h3>{f.title}</h3>
+              <p>{f.desc}</p>
+            </motion.div>
+          ))}
+          <motion.div className="landing-feature-card landing-feature-card-wide" id="security" {...cardHoverMotion} transition={{ ...cardHoverMotion.transition, delay: 0.2 }}>
+            <div className="landing-feature-icon">🔐</div>
+            <h3>Session-based Doctor Access</h3>
+            <p>Doctors enter through the dedicated portal, verify the patient with OTP, and access real session-scoped records instead of dummy data.</p>
+          </motion.div>
+        </div>
+      </section>
+
+      <section id="providers" className="landing-info-wrap">
+        <motion.div className="landing-section-copy" {...fadeUpMotion}>
+          <h2>Built for Providers</h2>
+          <p>CareSync is designed around real clinical workflows, giving doctors fast access to live records, patient uploads, and session-bound review tools.</p>
+        </motion.div>
+        <div className="landing-info-grid">
+          {[
+            ['OTP Session Access', 'Doctors enter through a dedicated portal, confirm the patient with a one-time code, and work inside a secure timed session.'],
+            ['Live Patient Context', 'Vitals, files, diagnoses, and appointments are pulled from your backend in real time instead of placeholder content.'],
+            ['Workflow-Ready Actions', 'Request uploads, review appointments, record diagnoses, and continue patient care from one connected interface.'],
+          ].map(([title, desc], index) => (
+            <motion.div key={title} className="landing-info-card" {...cardHoverMotion} transition={{ ...cardHoverMotion.transition, delay: index * 0.07 }}>
+              <span className="landing-info-index">0{index + 1}</span>
+              <h3>{title}</h3>
+              <p>{desc}</p>
+            </motion.div>
           ))}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer style={{ background:'#090e1a', color:'rgba(255,255,255,0.3)', padding:'40px 32px', textAlign:'center' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:14 }}>
-          <Logo size={28} radius={8} />
-          <span style={{ color:'rgba(255,255,255,0.7)', fontFamily:'var(--font-h)', fontWeight:700 }}>CareSync</span>
+      <section id="security" className="landing-info-wrap landing-info-wrap-tight">
+        <motion.div className="landing-section-copy" {...fadeUpMotion}>
+          <h2>Security by Design</h2>
+          <p>The platform is structured so sensitive access stays intentional, traceable, and patient-approved at every step.</p>
+        </motion.div>
+        <div className="landing-security-grid">
+          {[
+            ['Patient-approved doctor access', 'The doctor portal requires a patient-linked OTP before records can be accessed.'],
+            ['Real-time protected records', 'Appointments, diagnoses, and uploaded files stay connected to the authenticated session and your existing backend rules.'],
+            ['Clinical continuity without dummy data', 'Every visible action is grounded in the live system so the UI reflects the actual care workflow.'],
+          ].map(([title, desc], index) => (
+            <motion.div key={title} className="landing-security-card" {...cardHoverMotion} transition={{ ...cardHoverMotion.transition, delay: index * 0.08 }}>
+              <h3>{title}</h3>
+              <p>{desc}</p>
+            </motion.div>
+          ))}
         </div>
-        <p style={{ fontSize:'.78rem' }}>© 2026 CareSync Health Technologies · HIPAA Compliant · SOC 2 Type II</p>
+      </section>
+
+      <footer className="landing-footer">
+        <div className="landing-footer-brand">
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <Logo size={28} radius={8} />
+            <span>CareSync</span>
+          </div>
+          <p>© 2026 CareSync Health Technologies · HIPAA Compliant · Secure Doctor Session Access</p>
+        </div>
+        <div className="landing-footer-links">
+          <a href="#security">Privacy Protocol</a>
+          <a href="#clinical-ai">Clinical Accuracy</a>
+          <a href="#providers">For Providers</a>
+        </div>
       </footer>
     </div>
   )
 }
 
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    APPOINTMENTS TAB
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    PATIENT DIAGNOSIS TAB — view doctor diagnoses
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 function PatientDiagnosisTab({ patient }) {
   const [diagnoses, setDiagnoses] = useState([])
   const [tags,      setTags]      = useState([])
@@ -1394,7 +1505,7 @@ function PatientDiagnosisTab({ patient }) {
       {/* Diagnoses list */}
       {diagnoses.length === 0 ? (
         <div className="card" style={{ padding:48, textAlign:'center' }}>
-          <div style={{ fontSize:'2.5rem', marginBottom:12 }}>🩺</div>
+          <div style={{ fontSize:'2.5rem', marginBottom:12 }}>📋</div>
           <p style={{ fontWeight:600, color:'var(--c-dark)', marginBottom:6 }}>No diagnoses yet</p>
           <p style={{ fontSize:'.82rem', color:'var(--c-muted)' }}>Diagnoses added by your doctor during consultations will appear here.</p>
         </div>
@@ -1431,7 +1542,7 @@ function PatientDiagnosisTab({ patient }) {
               {d.follow_up_date && (
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:8 }}>
                   <span style={{ fontSize:'.75rem', fontWeight:600, color:'#f59e0b', background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.25)', borderRadius:50, padding:'3px 12px' }}>
-                    📅 Follow-up: {fmtDate(d.follow_up_date)}
+                    🔁 Follow-up: {fmtDate(d.follow_up_date)}
                   </span>
                 </div>
               )}
@@ -1638,9 +1749,9 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
   )
 }
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    DOCTOR LOGIN — OTP flow
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 function DoctorLogin({ onSuccess, onBack }) {
   const [doctors,    setDoctors]    = useState([])
   const [step,       setStep]       = useState(1)  // 1=select doctor+pid, 2=enter otp
@@ -1737,9 +1848,9 @@ function DoctorLogin({ onSuccess, onBack }) {
   )
 }
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    DOCTOR DASHBOARD
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 function DoctorDashboard({ session, onLogout }) {
   const [activeTab,   setActiveTab]   = useState('overview')
   const [appointments, setAppointments] = useState([])
@@ -1866,7 +1977,7 @@ function DoctorDashboard({ session, onLogout }) {
   const statusColors = { pending:'#f59e0b', confirmed:'#22c55e', completed:'#6366f1', cancelled:'#ef4444' }
   const TABS = [
     { id:'overview',     label:'Patient',      icon:'👤' },
-    { id:'vitals',       label:'Vitals',       icon:'💓' },
+    { id:'vitals',       label:'Vitals',       icon:'❤️' },
     { id:'appointments', label:'Appointments', icon:'📅' },
     { id:'files',        label:'Files',        icon:'📁' },
     { id:'diagnosis',    label:'Diagnosis',    icon:'🩺' },
@@ -1921,7 +2032,7 @@ function DoctorDashboard({ session, onLogout }) {
       <div className="dashboard-content" style={{ maxWidth:1100, margin:'0 auto', padding:'24px 24px 80px', paddingTop:116 }}>
         {result && <div style={{ marginBottom:16 }}><Alert type={result.success ? 'success' : 'error'}>{result.message}</Alert></div>}
 
-        {/* ── OVERVIEW TAB ── */}
+        {/* -- OVERVIEW TAB -- */}
         {activeTab === 'overview' && (
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:22 }}>
             {/* Patient summary */}
@@ -1987,7 +2098,7 @@ function DoctorDashboard({ session, onLogout }) {
           </div>
         )}
 
-        {/* ── APPOINTMENTS TAB ── */}
+        {/* -- APPOINTMENTS TAB -- */}
         {activeTab === 'appointments' && (
           <div>
             <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.5rem', marginBottom:20 }}>Scheduled Appointments</h1>
@@ -2019,8 +2130,8 @@ function DoctorDashboard({ session, onLogout }) {
           </div>
         )}
 
-        {/* ── FILES TAB ── */}
-        {/* ── DIAGNOSIS TAB — Patient view ── */}
+        {/* -- FILES TAB -- */}
+        {/* -- DIAGNOSIS TAB — Patient view -- */}
         {activeTab === 'diagnosis' && <PatientDiagnosisTab patient={patient} />}
 
         {activeTab === 'files' && (
@@ -2042,7 +2153,7 @@ function DoctorDashboard({ session, onLogout }) {
                           <div style={{ width:40, height:40, borderRadius:12, background:`${ft.color}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem', flexShrink:0 }}>{ft.icon}</div>
                           <p style={{ fontWeight:600, fontSize:'.87rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1, minWidth:0 }}>{f.file_name}</p>
                           {f.file_url && (
-                            <a href={f.file_url} target="_blank" rel="noreferrer" style={{ width:34, height:34, borderRadius:10, background:'rgba(0,180,160,0.1)', display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', fontSize:'.85rem', flexShrink:0 }}>👁</a>
+                            <a href={f.file_url} target="_blank" rel="noreferrer" style={{ width:34, height:34, borderRadius:10, background:'rgba(0,180,160,0.1)', display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', fontSize:'.85rem', flexShrink:0 }}>👁️</a>
                           )}
                         </div>
                         <div style={{ display:'flex', alignItems:'center', flexWrap:'wrap', gap:6, marginTop:8, paddingLeft:52 }}>
@@ -2060,7 +2171,7 @@ function DoctorDashboard({ session, onLogout }) {
           </div>
         )}
 
-        {/* ── VITALS TAB ── */}
+        {/* -- VITALS TAB -- */}
         {activeTab === 'vitals' && (
           <div style={{ maxWidth:600, margin:'0 auto' }}>
             <div className="card" style={{ padding:28 }}>
@@ -2068,10 +2179,10 @@ function DoctorDashboard({ session, onLogout }) {
               <p style={{ fontSize:'.8rem', color:'var(--c-muted)', marginBottom:24 }}>Enter the patient's current readings. Leave blank to keep existing values.</p>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
                 {[
-                  { key:'heart_rate',     label:'Heart Rate',     placeholder:'e.g. 72',     unit:'bpm',  icon:'♥', color:'#f43f5e' },
-                  { key:'blood_pressure', label:'Blood Pressure', placeholder:'e.g. 118/76', unit:'mmHg', icon:'◎', color:'#6366f1' },
-                  { key:'spo2',           label:'SpO₂',           placeholder:'e.g. 98',     unit:'%',    icon:'◉', color:'#3b82f6' },
-                  { key:'temperature',    label:'Temperature',    placeholder:'e.g. 98.6',   unit:'°F',   icon:'◈', color:'#f59e0b' },
+                  { key:'heart_rate',     label:'Heart Rate',     placeholder:'e.g. 72',     unit:'bpm',  icon:'❤️', color:'#f43f5e' },
+                  { key:'blood_pressure', label:'Blood Pressure', placeholder:'e.g. 118/76', unit:'mmHg', icon:'🫀', color:'#6366f1' },
+                  { key:'spo2',           label:'SpO2',           placeholder:'e.g. 98',     unit:'%',    icon:'🫁', color:'#3b82f6' },
+                  { key:'temperature',    label:'Temperature',    placeholder:'e.g. 98.6',   unit:'°F',   icon:'🌡️', color:'#f59e0b' },
                 ].map(v => (
                   <div key={v.key} style={{ background:'rgba(0,0,0,0.02)', borderRadius:14, padding:'16px', border:'1px solid rgba(0,0,0,0.07)' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
@@ -2106,15 +2217,23 @@ function DoctorDashboard({ session, onLogout }) {
           </div>
         )}
 
-        {/* ── DIAGNOSIS TAB ── */}
+        {/* -- DIAGNOSIS TAB -- */}
         {activeTab === 'diagnosis' && (
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:22 }}>
+          <div className="doctor-diagnosis-layout">
             {/* Add diagnosis */}
-            <div className="card" style={{ padding:28 }}>
-              <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem', marginBottom:20 }}>Add Diagnosis</h2>
-              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <div className="card doctor-diagnosis-editor" style={{ padding:28 }}>
+              <div className="doctor-diagnosis-header">
+                <div>
+                  <p className="doctor-diagnosis-kicker">Clinical Entry</p>
+                  <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.2rem', marginBottom:6 }}>Add Diagnosis</h2>
+                  <p className="doctor-diagnosis-subtle">Document findings, treatment, and follow-up notes for this patient session.</p>
+                </div>
+                <div className="doctor-diagnosis-badge">Live Session</div>
+              </div>
+
+              <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
                 <Field label="Link to appointment (optional)">
-                  <select className="inp" value={selAppt?.id || ''} onChange={e => setSelAppt(appointments.find(a => a.id === e.target.value) || null)} style={{ background:'rgba(255,255,255,0.9)' }}>
+                  <select className="inp" value={selAppt?.id || ''} onChange={e => setSelAppt(appointments.find(a => a.id === e.target.value) || null)}>
                     <option value="">No appointment linked</option>
                     {appointments.filter(a => a.status !== 'cancelled').map(a => (
                       <option key={a.id} value={a.id}>{new Date(a.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})} · {a.time_slot} · {a.status}</option>
@@ -2122,39 +2241,66 @@ function DoctorDashboard({ session, onLogout }) {
                   </select>
                 </Field>
                 <Field label="Diagnosis *">
-                  <textarea className="inp" rows={4} style={{ resize:'none' }} placeholder="Clinical findings and diagnosis…" value={diagnosis} onChange={e => setDiagnosis(e.target.value)} />
+                  <textarea className="inp doctor-diagnosis-textarea" rows={5} style={{ resize:'none' }} placeholder="Clinical findings, symptoms, observations, and assessment…" value={diagnosis} onChange={e => setDiagnosis(e.target.value)} />
                 </Field>
                 <Field label="Prescription / Treatment">
-                  <textarea className="inp" rows={3} style={{ resize:'none' }} placeholder="Medications, dosage, instructions…" value={prescription} onChange={e => setPrescription(e.target.value)} />
+                  <textarea className="inp doctor-diagnosis-textarea" rows={4} style={{ resize:'none' }} placeholder="Medications, dosage, instructions, or recommended treatment…" value={prescription} onChange={e => setPrescription(e.target.value)} />
                 </Field>
-                <Field label="Follow-up date">
-                  <Inp type="date" value={followUp} onChange={e => setFollowUp(e.target.value)} />
-                </Field>
-                <button className="btn" onClick={saveDiagnosis} disabled={saving || !diagnosis.trim()} style={{ justifyContent:'center', padding:'13px', gap:8, opacity: (!diagnosis.trim()||saving) ? .5 : 1 }}>
+                <div className="doctor-diagnosis-actions">
+                  <Field label="Follow-up date">
+                    <Inp type="date" value={followUp} onChange={e => setFollowUp(e.target.value)} />
+                  </Field>
+                  <div className="doctor-diagnosis-submit">
+                    <p className="doctor-diagnosis-subtle" style={{ marginBottom:10 }}>This will be added to the patient&apos;s live clinical record.</p>
+                    <button className="btn" onClick={saveDiagnosis} disabled={saving || !diagnosis.trim()} style={{ justifyContent:'center', padding:'13px', gap:8, opacity: (!diagnosis.trim()||saving) ? .5 : 1, width:'100%' }}>
                   {saving ? <><Spinner /> Saving…</> : 'Save Diagnosis'}
                 </button>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Previous diagnoses */}
-            <div className="card" style={{ padding:28 }}>
-              <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem', marginBottom:20 }}>Previous Diagnoses</h2>
+            <div className="card doctor-diagnosis-history" style={{ padding:28 }}>
+              <div className="doctor-diagnosis-header">
+                <div>
+                  <p className="doctor-diagnosis-kicker">Patient Timeline</p>
+                  <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.2rem', marginBottom:6 }}>Previous Diagnoses</h2>
+                  <p className="doctor-diagnosis-subtle">Review the patient&apos;s existing diagnosis history before adding new notes.</p>
+                </div>
+                <div className="doctor-diagnosis-badge">{patientData?.diagnoses?.length || 0} Entries</div>
+              </div>
+
               {!patientData?.diagnoses?.length ? (
-                <div style={{ textAlign:'center', padding:'30px 0', color:'var(--c-muted)' }}>
+                <div className="doctor-diagnosis-empty" style={{ textAlign:'center', padding:'30px 0', color:'var(--c-muted)' }}>
                   <p style={{ fontSize:'2rem', marginBottom:8 }}>📋</p>
                   <p style={{ fontWeight:600 }}>No diagnoses yet</p>
                 </div>
               ) : (
-                <div style={{ display:'flex', flexDirection:'column', gap:12, maxHeight:500, overflowY:'auto' }}>
-                  {patientData.diagnoses.map(d => (
-                    <div key={d.id} style={{ padding:'14px 16px', background:'rgba(0,0,0,0.03)', borderRadius:14, border:'1px solid rgba(0,0,0,0.06)' }}>
-                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
-                        <span style={{ fontWeight:700, fontSize:'.8rem', color:'var(--c-teal)' }}>{d.doctor_name}</span>
-                        <span style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>{fmtDate(d.created_at)}</span>
+                <div className="doctor-diagnosis-history-list">
+                  {patientData.diagnoses.map((d, index) => (
+                    <div key={d.id} className="doctor-diagnosis-history-card">
+                      <div className="doctor-diagnosis-history-top">
+                        <div>
+                          <span style={{ fontWeight:700, fontSize:'.82rem', color:'var(--c-teal)' }}>{d.doctor_name}</span>
+                          <p className="doctor-diagnosis-subtle" style={{ marginTop:4 }}>Recorded on {fmtDate(d.created_at)}</p>
+                        </div>
+                        <span className="doctor-diagnosis-chip">#{patientData.diagnoses.length - index}</span>
                       </div>
-                      <p style={{ fontSize:'.85rem', lineHeight:1.6, marginBottom:d.prescription?8:0 }}>{d.diagnosis}</p>
-                      {d.prescription && <p style={{ fontSize:'.78rem', color:'#6366f1', fontStyle:'italic' }}>Rx: {d.prescription}</p>}
-                      {d.follow_up_date && <p style={{ fontSize:'.75rem', color:'var(--c-muted)', marginTop:4 }}>Follow-up: {fmtDate(d.follow_up_date)}</p>}
+
+                      <div className="doctor-diagnosis-block">
+                        <p className="doctor-diagnosis-block-label">Diagnosis</p>
+                        <p style={{ fontSize:'.86rem', lineHeight:1.7, margin:0 }}>{d.diagnosis}</p>
+                      </div>
+
+                      {d.prescription && (
+                        <div className="doctor-diagnosis-block doctor-diagnosis-block-accent">
+                          <p className="doctor-diagnosis-block-label">Prescription / Treatment</p>
+                          <p style={{ fontSize:'.82rem', lineHeight:1.65, margin:0 }}>{d.prescription}</p>
+                        </div>
+                      )}
+
+                      {d.follow_up_date && <p style={{ fontSize:'.75rem', color:'var(--c-muted)', marginTop:10 }}>🔁 Follow-up: {fmtDate(d.follow_up_date)}</p>}
                     </div>
                   ))}
                 </div>
@@ -2167,9 +2313,9 @@ function DoctorDashboard({ session, onLogout }) {
   )
 }
 
-/* ════════════════════════════════════════════════════════════════
+/* ----------------------------------------------------------------
    ROOT — Session persistence + routing
-════════════════════════════════════════════════════════════════ */
+---------------------------------------------------------------- */
 export default function App() {
   const [view,        setView]       = useState('landing')  // 'landing' | 'dashboard' | 'doctor'
   const [patient,     setPatient]    = useState(null)
@@ -2225,3 +2371,4 @@ export default function App() {
     </>
   )
 }
+
