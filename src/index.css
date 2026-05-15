@@ -766,6 +766,23 @@ h1,h2,h3,h4,h5 { font-family: var(--font-h); }
   z-index: 1;
 }
 
+.dashboard-list-card {
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: background .2s ease, border-color .2s ease, transform .2s ease;
+}
+
+.dashboard-list-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,0.12);
+}
+
+.dashboard-empty-state p:first-of-type {
+  color: #eef5f5;
+}
+
 .doctor-diagnosis-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);

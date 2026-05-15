@@ -601,13 +601,13 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
   }
 
   if (loading) return (
-    <div style={{ textAlign:'center', padding:'40px 0', color:'var(--c-muted)' }}>
+    <div className="dashboard-empty-state" style={{ textAlign:'center', padding:'40px 0', color:'var(--c-muted)' }}>
       <Spinner size={28} color="var(--c-teal)" /><p style={{ marginTop:12, fontSize:'.85rem' }}>Loading files…</p>
     </div>
   )
 
   if (!files.length) return (
-    <div style={{ textAlign:'center', padding:'40px 0', color:'var(--c-muted)' }}>
+    <div className="dashboard-empty-state" style={{ textAlign:'center', padding:'40px 0', color:'var(--c-muted)' }}>
       <div style={{ fontSize:'2.5rem', marginBottom:10 }}>🗃️</div>
       <p style={{ fontWeight:600 }}>No files yet</p>
       <p style={{ fontSize:'.82rem', marginTop:4 }}>Upload your first prescription or report above.</p>
@@ -619,26 +619,26 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
       {files.map(f => {
         const ft = FILE_TYPES.find(t => t.value === f.file_type) || FILE_TYPES[3]
         return (
-          <div key={f.id} style={{ padding:'14px 16px', background:'rgba(255,255,255,0.7)', borderRadius:16, border:'1px solid rgba(0,0,0,0.07)', transition:'all .2s' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.95)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.7)'}>
+          <div key={f.id} className="dashboard-list-card"
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}>
             {/* Top row: icon + name + action buttons */}
             <div style={{ display:'flex', alignItems:'center', gap:12 }}>
               <div style={{ width:40, height:40, borderRadius:12, background:`${ft.color}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem', flexShrink:0 }}>
                 {ft.icon}
               </div>
-              <p style={{ fontWeight:600, fontSize:'.87rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1, minWidth:0 }}>{f.file_name}</p>
+              <p style={{ fontWeight:600, fontSize:'.87rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1, minWidth:0, color:'#eef5f5' }}>{f.file_name}</p>
               <div style={{ display:'flex', gap:7, flexShrink:0 }}>
                 {f.file_url && (
                   <a href={f.file_url} target="_blank" rel="noreferrer"
-                    style={{ width:34, height:34, borderRadius:10, background:'rgba(0,180,160,0.1)', display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', fontSize:'.85rem', transition:'all .2s' }}
+                    style={{ width:34, height:34, borderRadius:10, background:'rgba(0,180,160,0.14)', display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', fontSize:'.85rem', transition:'all .2s' }}
                     onMouseEnter={e => e.currentTarget.style.background='rgba(0,180,160,0.2)'}
-                    onMouseLeave={e => e.currentTarget.style.background='rgba(0,180,160,0.1)'}>👁️</a>
+                    onMouseLeave={e => e.currentTarget.style.background='rgba(0,180,160,0.14)'}>👁️</a>
                 )}
                 <button onClick={() => handleDelete(f)} disabled={deleting === f.id}
-                  style={{ width:34, height:34, borderRadius:10, background:'rgba(239,68,68,0.08)', border:'none', cursor:'pointer', fontSize:'.85rem', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .2s', opacity: deleting===f.id?.5:1 }}
+                  style={{ width:34, height:34, borderRadius:10, background:'rgba(239,68,68,0.14)', border:'none', cursor:'pointer', fontSize:'.85rem', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .2s', opacity: deleting===f.id?.5:1 }}
                   onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,0.18)'}
-                  onMouseLeave={e => e.currentTarget.style.background='rgba(239,68,68,0.08)'}>
+                  onMouseLeave={e => e.currentTarget.style.background='rgba(239,68,68,0.14)'}>
                   {deleting === f.id ? <Spinner size={14} color="#ef4444" /> : '🗑️'}
                 </button>
               </div>
@@ -1679,7 +1679,7 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
           <h2 style={{ fontFamily:'var(--font-h)', fontWeight:700, fontSize:'1.05rem', marginBottom:20 }}>Book New Appointment</h2>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
             <Field label="Select Doctor">
-              <select className="inp" value={selDoctor || ''} onChange={e => setSelDoctor(e.target.value)} style={{ background:'rgba(255,255,255,0.9)' }}>
+              <select className="inp" value={selDoctor || ''} onChange={e => setSelDoctor(e.target.value)}>
                 <option value="">Choose a doctor…</option>
                 {doctors.map(d => <option key={d.doctor_id} value={d.doctor_id}>{d.name} — {d.specialization}</option>)}
               </select>
@@ -1696,7 +1696,7 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
                 : (
                   <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:4 }}>
                     {availSlots.map(s => (
-                      <button key={s} onClick={() => setSelSlot(s)} style={{ padding:'8px 16px', borderRadius:50, border:`1.5px solid ${selSlot === s ? 'var(--c-teal)' : 'rgba(0,0,0,0.1)'}`, background: selSlot === s ? 'rgba(0,180,160,0.1)' : '#fff', color: selSlot === s ? 'var(--c-teal)' : 'var(--c-dark)', fontWeight:600, fontSize:'.82rem', cursor:'pointer', transition:'all .2s' }}>{s}</button>
+                      <button key={s} onClick={() => setSelSlot(s)} style={{ padding:'8px 16px', borderRadius:50, border:`1.5px solid ${selSlot === s ? 'var(--c-teal)' : 'rgba(255,255,255,0.1)'}`, background: selSlot === s ? 'rgba(0,180,160,0.16)' : 'rgba(255,255,255,0.04)', color: selSlot === s ? 'var(--c-cyan)' : '#dce8e8', fontWeight:600, fontSize:'.82rem', cursor:'pointer', transition:'all .2s' }}>{s}</button>
                     ))}
                   </div>
                 )
@@ -1719,7 +1719,7 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
       {/* Appointments list */}
       <div className="card" style={{ padding:24 }}>
         {appointments.length === 0 ? (
-          <div style={{ textAlign:'center', padding:'40px 0', color:'var(--c-muted)' }}>
+          <div className="dashboard-empty-state" style={{ textAlign:'center', padding:'40px 0', color:'var(--c-muted)' }}>
             <div style={{ fontSize:'2.5rem', marginBottom:10 }}>📅</div>
             <p style={{ fontWeight:600 }}>No appointments yet</p>
             <p style={{ fontSize:'.82rem', marginTop:4 }}>Book your first appointment above.</p>
@@ -1727,10 +1727,10 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             {appointments.map(a => (
-              <div key={a.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'16px 18px', background:'rgba(255,255,255,0.7)', borderRadius:16, border:'1px solid rgba(0,0,0,0.07)' }}>
+              <div key={a.id} className="dashboard-list-card" style={{ display:'flex', alignItems:'center', gap:14 }}>
                 <div style={{ width:46, height:46, borderRadius:14, background:'rgba(0,180,160,0.1)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.3rem', flexShrink:0 }}>🩺</div>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <p style={{ fontWeight:700, fontSize:'.9rem' }}>{a.doctor_name}</p>
+                  <p style={{ fontWeight:700, fontSize:'.9rem', color:'#eef5f5' }}>{a.doctor_name}</p>
                   <p style={{ fontSize:'.78rem', color:'var(--c-muted)', marginTop:2 }}>{new Date(a.date).toLocaleDateString('en-IN', { weekday:'short', day:'2-digit', month:'short', year:'numeric' })} · {a.time_slot}</p>
                   {a.reason && <p style={{ fontSize:'.75rem', color:'var(--c-muted)', marginTop:2, fontStyle:'italic' }}>"{a.reason}"</p>}
                 </div>
