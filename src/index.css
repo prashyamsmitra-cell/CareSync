@@ -184,6 +184,12 @@ h1,h2,h3,h4,h5 { font-family: var(--font-h); }
 .edit-modal .inp,
 .auth-modal-panel .inp {
   background:#f9fafb !important;
+  color: var(--c-dark) !important;
+}
+
+.edit-modal select,
+.auth-modal-panel select {
+  color: var(--c-dark) !important;
 }
 
 .edit-modal .inp:focus,
