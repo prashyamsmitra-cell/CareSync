@@ -129,11 +129,11 @@ function Logo({ size = 34, radius = 10, zoom = 1, fit = 'contain' }) {
 
 function Field({ label, error, hint, children }) {
   return (
-    <div>
-      <label style={{ display:'block', fontWeight:600, fontSize:'.82rem', marginBottom:6, letterSpacing:'.02em' }}>{label}</label>
+    <div className="field-group">
+      <label className="field-label">{label}</label>
       {children}
-      {hint  && <p style={{ fontSize:'.74rem', color:'var(--c-muted)', marginTop:4 }}>{hint}</p>}
-      {error && <p style={{ fontSize:'.74rem', color:'#f87171',       marginTop:4 }}>{error}</p>}
+      {hint  && <p className="field-hint">{hint}</p>}
+      {error && <p className="field-error">{error}</p>}
     </div>
   )
 }
@@ -299,22 +299,19 @@ function AuthModal({ onSuccess, onClose }) {
     ? (parseFloat(signupForm.weight_kg) / ((parseFloat(signupForm.height_cm) / 100) ** 2)).toFixed(1)
     : null
 
-  const overlayStyle = { position:'fixed', inset:0, zIndex:400, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(6,13,31,0.75)', backdropFilter:'blur(12px)', padding:'16px' }
-  const panelStyle   = { position:'relative', width:'100%', maxWidth:480, maxHeight:'94vh', overflowY:'auto', borderRadius:28, background:'#fff', boxShadow:'0 40px 100px rgba(0,0,0,0.3)', animation:'fadeUp .3s ease' }
-
   return (
-    <div style={overlayStyle} onClick={onClose}>
-      <div style={panelStyle} onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="card form-card auth-modal-panel modal-panel" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div style={{ background:'linear-gradient(135deg,#060d1f,#0a2428)', padding:'26px 30px 22px', borderRadius:'28px 28px 0 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div className="auth-modal-header panel-header">
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <Logo size={30} radius={8} />
             <div>
-              <p style={{ color:'#fff', fontWeight:800, fontFamily:'var(--font-h)', fontSize:'.95rem' }}>
+              <p className="panel-title">
                 {mode === 'login' ? 'Welcome back' : step === 1 ? 'Create your account' : 'Health information'}
               </p>
-              <p style={{ color:'rgba(255,255,255,0.4)', fontSize:'.72rem', marginTop:1 }}>
+              <p className="panel-subtitle">
                 {mode === 'login' ? 'Sign in to your CareSync account'
                   : step === 1 ? 'Step 1 of 2 — Personal details'
                   : 'Step 2 of 2 — Physical metrics'}
@@ -325,17 +322,17 @@ function AuthModal({ onSuccess, onClose }) {
         </div>
 
         {/* Toggle */}
-        <div style={{ padding:'18px 30px 0' }}>
-          <div style={{ display:'flex', background:'rgba(0,0,0,0.05)', borderRadius:12, padding:4 }}>
+        <div className="auth-modal-body">
+          <div className="toggle-tabs">
             {['login','signup'].map(m => (
-              <button key={m} onClick={() => switchMode(m)} style={{ flex:1, padding:'9px', borderRadius:9, border:'none', cursor:'pointer', fontFamily:'var(--font-b)', fontWeight:600, fontSize:'.84rem', transition:'all .2s', background: mode === m ? '#fff' : 'transparent', color: mode === m ? 'var(--c-dark)' : 'var(--c-muted)', boxShadow: mode === m ? '0 2px 8px rgba(0,0,0,0.08)' : 'none' }}>
+              <button key={m} onClick={() => switchMode(m)} className={`toggle-tab${mode === m ? ' active' : ''}`}>
                 {m === 'login' ? 'Sign In' : 'Sign Up'}
               </button>
             ))}
           </div>
         </div>
 
-        <div style={{ padding:'22px 30px 28px', display:'flex', flexDirection:'column', gap:15 }}>
+        <div className="panel-content">
 
           {apiErr && <Alert type="error">{apiErr}</Alert>}
 
@@ -347,7 +344,7 @@ function AuthModal({ onSuccess, onClose }) {
             <Field label="Password" error={loginErrs.password}>
               <PasswordInp error={loginErrs.password} value={loginForm.password} onChange={e => setL('password', e.target.value)} />
             </Field>
-            <button className="btn" onClick={handleLogin} disabled={loading} style={{ padding:'14px', justifyContent:'center', fontSize:'1rem', borderRadius:14, gap:8, opacity: loading ? .7 : 1 }}>
+            <button className="btn" onClick={handleLogin} disabled={loading} style={{ opacity: loading ? .7 : 1 }}>
               {loading ? <><Spinner /> Signing in…</> : 'Sign In →'}
             </button>
           </>)}
@@ -363,12 +360,12 @@ function AuthModal({ onSuccess, onClose }) {
             <Field label="Phone number" error={signupErrs.phone}>
               <Inp error={signupErrs.phone} type="tel" placeholder="+91 98765 43210" value={signupForm.phone} onChange={e => setS('phone', e.target.value)} />
             </Field>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <div className="input-row">
               <Field label="Date of birth" error={signupErrs.dob}>
                 <Inp error={signupErrs.dob} type="date" value={signupForm.dob} onChange={e => setS('dob', e.target.value)} />
               </Field>
               <Field label="Gender">
-                <select className="inp" value={signupForm.gender} onChange={e => setS('gender', e.target.value)} style={{ background:'rgba(255,255,255,0.9)' }}>
+                <select className="inp" value={signupForm.gender} onChange={e => setS('gender', e.target.value)}>
                   <option value="">Select</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
@@ -383,7 +380,7 @@ function AuthModal({ onSuccess, onClose }) {
             <Field label="Confirm password" error={signupErrs.confirmPassword}>
               <PasswordInp error={signupErrs.confirmPassword} value={signupForm.confirmPassword} onChange={e => setS('confirmPassword', e.target.value)} placeholder="Re-enter password" />
             </Field>
-            <button className="btn" onClick={() => { const e = validateStep1(); if (Object.keys(e).length) { setSignupErrs(e); return } setStep(2) }} style={{ padding:'14px', justifyContent:'center', fontSize:'1rem', borderRadius:14 }}>
+            <button className="btn" onClick={() => { const e = validateStep1(); if (Object.keys(e).length) { setSignupErrs(e); return } setStep(2) }}>
               Continue →
             </button>
           </>)}
@@ -391,7 +388,7 @@ function AuthModal({ onSuccess, onClose }) {
           {/* -- SIGNUP STEP 2 -- */}
           {mode === 'signup' && step === 2 && (<>
             <Alert type="info">Your metrics help us calculate BMI and personalise your dashboard. You can update these later.</Alert>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <div className="input-row">
               <Field label="Weight (kg)" hint="e.g. 70">
                 <Inp type="number" min="20" max="300" placeholder="70" value={signupForm.weight_kg} onChange={e => setS('weight_kg', e.target.value)} />
               </Field>
@@ -404,24 +401,26 @@ function AuthModal({ onSuccess, onClose }) {
             {liveBMI && (() => {
               const cat = bmiCategory(liveBMI)
               return (
-                <div style={{ background:`${cat.color}12`, border:`1px solid ${cat.color}30`, borderRadius:12, padding:'12px 16px', display:'flex', alignItems:'center', gap:14 }}>
-                  <div style={{ fontFamily:'var(--font-h)', fontWeight:900, fontSize:'2rem', color:cat.color, lineHeight:1 }}>{liveBMI}</div>
-                  <div>
-                    <p style={{ fontWeight:700, fontSize:'.85rem', color:cat.color }}>BMI — {cat.label}</p>
-                    <p style={{ fontSize:'.74rem', color:'var(--c-muted)', marginTop:2 }}>Based on entered values</p>
+                <div className="callout-box">
+                  <strong style={{ color:cat.color }}>BMI — {cat.label}</strong>
+                  <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                    <div style={{ fontFamily:'var(--font-h)', fontWeight:900, fontSize:'2rem', color:cat.color, lineHeight:1 }}>{liveBMI}</div>
+                    <div>
+                      <p style={{ fontSize:'.85rem', color:'var(--c-dark)', margin:0 }}>Based on entered values</p>
+                    </div>
                   </div>
                 </div>
               )
             })()}
 
             <Field label="Blood type">
-              <select className="inp" value={signupForm.blood_type} onChange={e => setS('blood_type', e.target.value)} style={{ background:'rgba(255,255,255,0.9)' }}>
+              <select className="inp" value={signupForm.blood_type} onChange={e => setS('blood_type', e.target.value)}>
                 {['Unknown','A+','A-','B+','B-','AB+','AB-','O+','O-'].map(t => <option key={t}>{t}</option>)}
               </select>
             </Field>
-            <div style={{ display:'flex', gap:10 }}>
-              <button className="btn-ow" onClick={() => setStep(1)} style={{ padding:'13px 20px', fontSize:'.9rem' }}>← Back</button>
-              <button className="btn" onClick={handleSignup} disabled={loading} style={{ flex:1, padding:'14px', justifyContent:'center', fontSize:'1rem', borderRadius:14, gap:8, opacity: loading ? .7 : 1 }}>
+            <div className="form-actions">
+              <button className="btn-ow" onClick={() => setStep(1)}>← Back</button>
+              <button className="btn" onClick={handleSignup} disabled={loading} style={{ opacity: loading ? .7 : 1 }}>
                 {loading ? <><Spinner /> Creating account…</> : 'Create Account →'}
               </button>
             </div>
@@ -509,30 +508,22 @@ function FileUploader({ pid, onUploaded }) {
     <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
       {/* Type selector */}
-      <div className="file-type-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+      <div className="file-type-grid">
         {FILE_TYPES.map(ft => (
-          <button key={ft.value} onClick={() => setFileType(ft.value)} style={{ padding:'10px 8px', borderRadius:12, border:`1.5px solid ${fileType === ft.value ? ft.color : 'rgba(0,0,0,0.08)'}`, background: fileType === ft.value ? `${ft.color}12` : '#fff', cursor:'pointer', transition:'all .2s', display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+          <button key={ft.value} onClick={() => setFileType(ft.value)} className={`file-type-button${fileType === ft.value ? ' active' : ''}`}>
             <span style={{ fontSize:'1.2rem' }}>{ft.icon}</span>
-            <span style={{ fontSize:'.72rem', fontWeight:600, color: fileType === ft.value ? ft.color : 'var(--c-muted)' }}>{ft.label}</span>
+            <span>{ft.label}</span>
           </button>
         ))}
       </div>
 
       {/* Drop zone */}
       <div
+        className="upload-dropzone"
         onDragOver={e => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         onClick={() => inputRef.current?.click()}
-        style={{
-          border: `2px dashed ${dragging ? 'var(--c-teal)' : 'rgba(0,180,160,0.3)'}`,
-          borderRadius: 18,
-          padding: '32px 24px',
-          textAlign: 'center',
-          cursor: 'pointer',
-          background: dragging ? 'rgba(0,180,160,0.05)' : 'rgba(0,180,160,0.02)',
-          transition: 'all .2s',
-        }}
       >
         <input ref={inputRef} type="file" multiple accept=".jpg,.jpeg,.png,.webp,.pdf" style={{ display:'none' }} onChange={e => addFiles(e.target.files)} />
         <div style={{ fontSize:'2rem', marginBottom:10 }}>📤</div>
@@ -546,13 +537,13 @@ function FileUploader({ pid, onUploaded }) {
       {queued.length > 0 && (
         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
           {queued.map((f, i) => (
-            <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', background:'rgba(0,0,0,0.03)', borderRadius:12, border:'1px solid rgba(0,0,0,0.06)' }}>
+            <div key={i} className="upload-item">
               <span style={{ fontSize:'1.1rem' }}>{f.type === 'application/pdf' ? '📕' : '🗂️'}</span>
               <div style={{ flex:1, minWidth:0 }}>
-                <p style={{ fontWeight:600, fontSize:'.84rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</p>
-                <p style={{ fontSize:'.72rem', color:'var(--c-muted)' }}>{fmtBytes(f.size)}</p>
+                <p style={{ fontWeight:600, fontSize:'.84rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', margin:0 }}>{f.name}</p>
+                <p style={{ fontSize:'.72rem', color:'var(--c-muted)', margin:0 }}>{fmtBytes(f.size)}</p>
               </div>
-              <button onClick={() => removeQueued(i)} style={{ width:26, height:26, borderRadius:'50%', background:'rgba(239,68,68,0.1)', border:'none', color:'#ef4444', cursor:'pointer', fontSize:'.9rem', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
+              <button onClick={() => removeQueued(i)} style={{ width:28, height:28, borderRadius:'50%', background:'rgba(239,68,68,0.12)', border:'none', color:'#ef4444', cursor:'pointer', fontSize:'.95rem', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
             </div>
           ))}
         </div>
@@ -565,13 +556,11 @@ function FileUploader({ pid, onUploaded }) {
         placeholder="Add a note (optional) — e.g. 'Post-surgery follow-up report'"
         value={notes}
         onChange={e => setNotes(e.target.value)}
-        style={{ resize:'none', fontFamily:'var(--font-b)', fontSize:'.86rem' }}
       />
 
-      {/* Progress */}
       {uploading && (
-        <div style={{ background:'rgba(0,0,0,0.05)', borderRadius:50, height:6, overflow:'hidden' }}>
-          <div style={{ height:'100%', width:`${progress}%`, background:'linear-gradient(90deg,#00b4a0,#00d4c8)', borderRadius:50, transition:'width .3s' }} />
+        <div className="upload-progress">
+          <div className="upload-progress-fill" style={{ width:`${progress}%` }} />
         </div>
       )}
 
@@ -601,16 +590,17 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
   }
 
   if (loading) return (
-    <div className="dashboard-empty-state" style={{ textAlign:'center', padding:'40px 0', color:'var(--c-muted)' }}>
-      <Spinner size={28} color="var(--c-teal)" /><p style={{ marginTop:12, fontSize:'.85rem' }}>Loading files…</p>
+    <div className="dashboard-empty-state dashboard-empty">
+      <Spinner size={28} color="var(--c-teal)" />
+      <p className="dashboard-empty-copy">Loading files…</p>
     </div>
   )
 
   if (!files.length) return (
-    <div className="dashboard-empty-state" style={{ textAlign:'center', padding:'40px 0', color:'var(--c-muted)' }}>
-      <div style={{ fontSize:'2.5rem', marginBottom:10 }}>🗃️</div>
-      <p style={{ fontWeight:600 }}>No files yet</p>
-      <p style={{ fontSize:'.82rem', marginTop:4 }}>Upload your first prescription or report above.</p>
+    <div className="dashboard-empty-state dashboard-empty">
+      <div className="dashboard-empty-icon">🗃️</div>
+      <p className="dashboard-empty-title">No files yet</p>
+      <p className="dashboard-empty-copy">Upload your first prescription or report above.</p>
     </div>
   )
 
@@ -619,9 +609,7 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
       {files.map(f => {
         const ft = FILE_TYPES.find(t => t.value === f.file_type) || FILE_TYPES[3]
         return (
-          <div key={f.id} className="dashboard-list-card"
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}>
+          <div key={f.id} className="dashboard-list-card">
             {/* Top row: icon + name + action buttons */}
             <div style={{ display:'flex', alignItems:'center', gap:12 }}>
               <div style={{ width:40, height:40, borderRadius:12, background:`${ft.color}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem', flexShrink:0 }}>
@@ -630,15 +618,9 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
               <p style={{ fontWeight:600, fontSize:'.87rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1, minWidth:0, color:'#eef5f5' }}>{f.file_name}</p>
               <div style={{ display:'flex', gap:7, flexShrink:0 }}>
                 {f.file_url && (
-                  <a href={f.file_url} target="_blank" rel="noreferrer"
-                    style={{ width:34, height:34, borderRadius:10, background:'rgba(0,180,160,0.14)', display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', fontSize:'.85rem', transition:'all .2s' }}
-                    onMouseEnter={e => e.currentTarget.style.background='rgba(0,180,160,0.2)'}
-                    onMouseLeave={e => e.currentTarget.style.background='rgba(0,180,160,0.14)'}>👁️</a>
+                  <a href={f.file_url} target="_blank" rel="noreferrer" className="icon-button icon-button-view">👁️</a>
                 )}
-                <button onClick={() => handleDelete(f)} disabled={deleting === f.id}
-                  style={{ width:34, height:34, borderRadius:10, background:'rgba(239,68,68,0.14)', border:'none', cursor:'pointer', fontSize:'.85rem', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .2s', opacity: deleting===f.id?.5:1 }}
-                  onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,0.18)'}
-                  onMouseLeave={e => e.currentTarget.style.background='rgba(239,68,68,0.14)'}>
+                <button onClick={() => handleDelete(f)} disabled={deleting === f.id} className="icon-button icon-button-danger">
                   {deleting === f.id ? <Spinner size={14} color="#ef4444" /> : '🗑️'}
                 </button>
               </div>
@@ -695,12 +677,12 @@ function ChatBot({ patient, onClose, onNavigate }) {
   const chips = ['I have chest pain', 'Frequent headaches', 'Breathing difficulty', 'Joint pain', 'High blood sugar', 'Persistent fever']
 
   return (
-    <div className="chat-wrapper" style={{ position:'fixed', inset:0, zIndex:200, display:'flex', alignItems:'flex-end', justifyContent:'flex-end', padding:'24px' }}>
-      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(9,14,26,0.35)', backdropFilter:'blur(6px)' }} />
-      <div className="chat-panel" style={{ position:'relative', width:'100%', maxWidth:440, height:680, maxHeight:'92vh', borderRadius:28, overflow:'hidden', display:'flex', flexDirection:'column', background:'rgba(9,16,18,0.96)', backdropFilter:'blur(40px)', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 32px 80px rgba(0,0,0,0.38)' }}>
+<div className="chat-wrapper">
+      <div className="chat-backdrop" onClick={onClose} />
+      <div className="chat-panel">
 
         {/* Header */}
-        <div style={{ background:'linear-gradient(135deg,#060d1f,#0a2428)', padding:'16px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+        <div className="chat-header panel-header">
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <div style={{ width:40, height:40, borderRadius:13, background:'rgba(0,180,160,0.2)', border:'1px solid rgba(0,180,160,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem' }}>🤖</div>
             <div>
@@ -721,7 +703,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
           {msgs.length === 1 && (
             <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:4 }}>
               {chips.map(c => (
-                <button key={c} onClick={() => { setInp(c); }} style={{ padding:'6px 12px', borderRadius:50, border:'1.5px solid rgba(0,180,160,0.3)', background:'rgba(0,180,160,0.08)', color:'var(--c-cyan)', fontSize:'.75rem', fontWeight:600, cursor:'pointer', fontFamily:'var(--font-b)' }}>{c}</button>
+                <button key={c} onClick={() => { setInp(c); }} className="chat-chip">{c}</button>
               ))}
             </div>
           )}
@@ -791,10 +773,10 @@ function ChatBot({ patient, onClose, onNavigate }) {
         </div>
 
         {/* Input */}
-        <div style={{ padding:'12px 14px', borderTop:'1px solid rgba(255,255,255,0.08)', flexShrink:0, background:'rgba(255,255,255,0.03)' }}>
-          <div style={{ display:'flex', gap:8, alignItems:'center', background:'rgba(255,255,255,0.04)', borderRadius:50, border:'1.5px solid rgba(255,255,255,0.08)', padding:'7px 7px 7px 18px' }}>
+        <div className="chat-footer">
+          <div className="chat-input-row">
             <input
-              style={{ flex:1, border:'none', outline:'none', background:'transparent', fontFamily:'var(--font-b)', fontSize:'.86rem', color:'#eef5f5' }}
+              className="chat-input"
               placeholder="Describe your symptoms…"
               value={inp}
               onChange={e => setInp(e.target.value)}
@@ -1073,12 +1055,10 @@ function Dashboard({ patient, onLogout }) {
                       { label:'View My Files',       icon:'📁', tab:'files'  },
                       { label:'Ask AI Assistant',    icon:'🤖',  tab:null    },
                     ].map(a => (
-                      <button key={a.label} onClick={() => a.tab ? setActiveTab(a.tab) : setChat(true)} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:11, border:'1.5px solid rgba(0,0,0,0.07)', background:'rgba(255,255,255,0.6)', cursor:'pointer', fontFamily:'var(--font-b)', fontWeight:600, fontSize:'.82rem', transition:'all .2s', textAlign:'left' }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.95)'; e.currentTarget.style.transform = 'translateX(3px)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.6)';  e.currentTarget.style.transform = 'translateX(0)' }}>
+                      <button key={a.label} onClick={() => a.tab ? setActiveTab(a.tab) : setChat(true)} className="quick-action-button">
                         <span style={{ fontSize:'1rem' }}>{a.icon}</span>
-                        <span style={{ color:'var(--c-dark)' }}>{a.label}</span>
-                        <span style={{ marginLeft:'auto', color:'var(--c-muted)', fontSize:'.75rem' }}>→</span>
+                        <span>{a.label}</span>
+                        <span>→</span>
                       </button>
                     ))}
                   </div>
@@ -1131,24 +1111,20 @@ function Dashboard({ patient, onLogout }) {
 
       {/* -- EDIT PHYSICAL PROFILE MODAL -- */}
       {editPhysical && (
-        <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:'rgba(9,14,26,0.5)', backdropFilter:'blur(8px)' }}>
-          <div style={{ width:'100%', maxWidth:420, borderRadius:24, overflow:'hidden', background:'#fff', boxShadow:'0 32px 80px rgba(0,0,0,0.22)' }}>
+        <div className="modal-overlay">
+          <div className="card form-card edit-modal modal-panel" style={{ width:'100%', maxWidth:420, overflow:'hidden' }}>
             {/* Header */}
-            <div style={{ background:'linear-gradient(135deg,#060d1f,#0a2428)', padding:'20px 24px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <div className="edit-modal-header panel-header">
               <div>
-                <p style={{ color:'#fff', fontWeight:700, fontFamily:'var(--font-h)', fontSize:'.95rem' }}>Edit Physical Profile</p>
-                <p style={{ color:'rgba(255,255,255,0.4)', fontSize:'.72rem', marginTop:2 }}>BMI will be recalculated automatically</p>
+                <p className="panel-title">Edit Physical Profile</p>
+                <p className="panel-subtitle">BMI will be recalculated automatically</p>
               </div>
-              <button onClick={() => setEditPhysical(false)} style={{ width:30, height:30, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'none', color:'#fff', cursor:'pointer', fontSize:'1.1rem', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
+              <button onClick={() => setEditPhysical(false)} className="icon-button icon-button-close">×</button>
             </div>
             {/* Form */}
-            <div style={{ padding:'24px' }}>
-              {editResult && (
-                <div style={{ marginBottom:16, padding:'10px 14px', borderRadius:10, background: editResult.success ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', border:`1px solid ${editResult.success ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, color: editResult.success ? '#16a34a' : '#dc2626', fontSize:'.82rem', fontWeight:600 }}>
-                  {editResult.message}
-                </div>
-              )}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+            <div className="edit-modal-body">
+              {editResult && <Alert type={editResult.success ? 'success' : 'error'}>{editResult.message}</Alert>}
+                <div className="edit-grid">
                 {[
                   { key:'weight_kg',  label:'Weight',     placeholder:'e.g. 70',  suffix:'kg',  type:'number' },
                   { key:'height_cm',  label:'Height',     placeholder:'e.g. 170', suffix:'cm',  type:'number' },
@@ -1157,9 +1133,9 @@ function Dashboard({ patient, onLogout }) {
                   { key:'phone',      label:'Phone',      placeholder:'+91...',   suffix:'',    type:'text',  span:2 },
                 ].map(f => (
                   <div key={f.key} style={{ gridColumn: f.span ? `span ${f.span}` : 'span 1' }}>
-                    <label style={{ display:'block', fontSize:'.75rem', fontWeight:600, color:'var(--c-muted)', marginBottom:6 }}>{f.label}</label>
-                    {f.type === 'select' ? (
-                      <select className="inp" value={editForm[f.key]} onChange={e => setEditForm(p => ({...p, [f.key]: e.target.value}))} style={{ background:'rgba(255,255,255,0.9)' }}>
+                    <label className="field-label">{f.label}</label>
+                          {f.type === 'select' ? (
+                      <select className="inp" value={editForm[f.key]} onChange={e => setEditForm(p => ({...p, [f.key]: e.target.value}))}>
                         <option value="">Select</option>
                         {['Male','Female','Non-binary','Prefer not to say'].map(g => <option key={g} value={g}>{g}</option>)}
                       </select>
@@ -1168,9 +1144,9 @@ function Dashboard({ patient, onLogout }) {
                         <input className="inp" type={f.type} placeholder={f.placeholder}
                           value={editForm[f.key]}
                           onChange={e => setEditForm(p => ({...p, [f.key]: e.target.value}))}
-                          style={{ background:'rgba(255,255,255,0.9)', paddingRight: f.suffix ? 40 : undefined }}
+                          style={{ paddingRight: f.suffix ? 40 : undefined }}
                         />
-                        {f.suffix && <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:'.78rem', color:'var(--c-muted)', fontWeight:600 }}>{f.suffix}</span>}
+                        {f.suffix && <span className="input-suffix">{f.suffix}</span>}
                       </div>
                     )}
                   </div>
@@ -1178,15 +1154,14 @@ function Dashboard({ patient, onLogout }) {
               </div>
               {/* Live BMI preview */}
               {editForm.weight_kg && editForm.height_cm && (
-                <div style={{ marginTop:14, padding:'10px 14px', borderRadius:10, background:'rgba(0,180,160,0.06)', border:'1px solid rgba(0,180,160,0.15)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                  <span style={{ fontSize:'.8rem', color:'var(--c-muted)' }}>New BMI</span>
-                  <span style={{ fontWeight:800, color:'var(--c-teal-dim)', fontFamily:'var(--font-h)', fontSize:'1rem' }}>
+                <div className="callout-box callout-row">
+                  <span className="callout-copy">New BMI</span>
+                  <span className="callout-value">
                     {(parseFloat(editForm.weight_kg) / ((parseFloat(editForm.height_cm)/100)**2)).toFixed(1)}
                   </span>
                 </div>
               )}
-              <button className="btn" onClick={saveEdit} disabled={editSaving}
-                style={{ width:'100%', marginTop:18, padding:'13px', borderRadius:14, fontSize:'.9rem', opacity: editSaving ? .7 : 1 }}>
+              <button className="btn btn-full" onClick={saveEdit} disabled={editSaving} style={{ opacity: editSaving ? .7 : 1 }}>
                 {editSaving ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
