@@ -124,12 +124,21 @@ h1,h2,h3,h4,h5 { font-family: var(--font-h); }
   background:rgba(255,255,255,0.85); border:1.5px solid rgba(0,0,0,0.08);
   border-radius:var(--r-sm); font-family:var(--font-b); font-size:.9rem;
   color:var(--c-dark); transition:all .22s ease; outline:none;
+  caret-color: var(--c-dark);
   /* prevent zoom on focus on iOS */
   font-size: 16px;
 }
 .inp::placeholder { color:var(--c-muted); }
 .inp:focus { border-color:var(--c-teal); background:#fff; box-shadow:0 0 0 4px rgba(0,180,160,0.12); }
 .inp-err { border-color:#f87171!important; background:#fff5f5!important; box-shadow:0 0 0 4px rgba(248,113,113,0.1)!important; }
+
+input,
+textarea,
+select,
+.inp {
+  color: var(--c-dark) !important;
+  caret-color: var(--c-dark) !important;
+}
 
 .field-group {
   display:flex;
@@ -1674,7 +1683,7 @@ h1,h2,h3,h4,h5 { font-family: var(--font-h); }
 .app-dashboard .inp {
   background: rgba(255,255,255,0.04);
   border-color: rgba(255,255,255,0.08);
-  color: #eef5f5;
+  color: var(--c-dark) !important;
 }
 
 .app-dashboard .inp::placeholder {
@@ -1838,6 +1847,25 @@ h1,h2,h3,h4,h5 { font-family: var(--font-h); }
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
+}
+
+/* Force visible text color for all form controls */
+body input,
+body textarea,
+body select,
+body .inp {
+  color: #090e1a !important;
+  caret-color: #090e1a !important;
+}
+
+body .inp::placeholder,
+body textarea::placeholder,
+body select::placeholder {
+  color: rgba(15,23,42,0.45) !important;
+}
+
+body select option {
+  color: #090e1a !important;
 }
 
 .doctor-diagnosis-empty {
