@@ -182,14 +182,17 @@ h1,h2,h3,h4,h5 { font-family: var(--font-h); }
 }
 
 .edit-modal .inp,
-.auth-modal-panel .inp {
-  background:#f9fafb !important;
-  color: var(--c-dark) !important;
-}
-
+.auth-modal-panel .inp,
 .edit-modal select,
 .auth-modal-panel select {
+  background:#f9fafb !important;
   color: var(--c-dark) !important;
+  caret-color: var(--c-dark) !important;
+}
+
+.edit-modal .inp::placeholder,
+.auth-modal-panel .inp::placeholder {
+  color: var(--c-muted) !important;
 }
 
 .edit-modal .inp:focus,
