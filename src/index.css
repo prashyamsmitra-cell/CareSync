@@ -140,6 +140,39 @@ select,
   caret-color: var(--c-dark) !important;
 }
 
+input::placeholder,
+textarea::placeholder,
+select::placeholder,
+.inp::placeholder {
+  color: var(--c-muted) !important;
+  opacity: 1;
+}
+
+input,
+textarea,
+select {
+  font-family: var(--font-b);
+}
+
+select option {
+  background: #ffffff;
+  color: #091012;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--c-dark) !important;
+  box-shadow: 0 0 0 1000px rgba(255,255,255,0.92) inset !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 .field-group {
   display:flex;
   flex-direction:column;
@@ -1686,12 +1719,66 @@ select,
   color: var(--c-dark) !important;
 }
 
+.app-dashboard input:not([type="file"]),
+.app-dashboard textarea,
+.app-dashboard select,
+.app-dashboard .inp {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #eef5f5 !important;
+  caret-color: #eef5f5 !important;
+}
+
 .app-dashboard .inp::placeholder {
   color: rgba(255,255,255,0.34);
 }
 
+.app-dashboard input::placeholder,
+.app-dashboard textarea::placeholder,
+.app-dashboard .inp::placeholder {
+  color: rgba(255,255,255,0.42) !important;
+}
+
 .app-dashboard .inp:focus {
   background: rgba(255,255,255,0.06);
+}
+
+.app-dashboard input:not([type="file"]):focus,
+.app-dashboard textarea:focus,
+.app-dashboard select:focus,
+.app-dashboard .inp:focus {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(31,227,229,0.55) !important;
+  box-shadow: 0 0 0 4px rgba(31,227,229,0.12) !important;
+}
+
+.app-dashboard select option {
+  background: #0c1416;
+  color: #eef5f5;
+}
+
+.app-dashboard input:-webkit-autofill,
+.app-dashboard input:-webkit-autofill:hover,
+.app-dashboard input:-webkit-autofill:focus,
+.app-dashboard textarea:-webkit-autofill,
+.app-dashboard textarea:-webkit-autofill:hover,
+.app-dashboard textarea:-webkit-autofill:focus,
+.app-dashboard select:-webkit-autofill,
+.app-dashboard select:-webkit-autofill:hover,
+.app-dashboard select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #eef5f5 !important;
+  box-shadow: 0 0 0 1000px #10191b inset !important;
+}
+
+.app-dashboard .field-label,
+.app-dashboard .field-hint,
+.app-dashboard .field-error,
+.app-dashboard .input-suffix,
+.app-dashboard p,
+.app-dashboard li,
+.app-dashboard dd,
+.app-dashboard dt {
+  color: inherit;
 }
 
 .app-dashboard .welcome-banner {
@@ -2075,4 +2162,3 @@ body select option {
 @media (max-width: 768px) {
   .mobile-only { display: flex !important; }
 }
-
