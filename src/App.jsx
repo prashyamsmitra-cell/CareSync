@@ -105,6 +105,108 @@ const FILE_TYPES = [
   { value: 'other',        label: 'Other',        icon: '📄', color: '#94a3b8' },
 ]
 
+const addDays = (days) => {
+  const date = new Date()
+  date.setDate(date.getDate() + days)
+  return date.toISOString()
+}
+
+const createDemoPatient = () => ({
+  id: 'demo-patient',
+  pid: 'CSDEMO1',
+  name: 'Demo User',
+  email: 'demo@caresync.app',
+  phone: '+91 98765 43210',
+  dob: '1996-08-14T00:00:00.000Z',
+  gender: 'Female',
+  blood_type: 'O+',
+  weight_kg: 62,
+  height_cm: 168,
+  bmi: '22.0',
+  heart_rate: '72',
+  blood_pressure: '118/76',
+  spo2: '99',
+  temperature: '98.4',
+  vitals_updated_at: addDays(-1),
+  vitals_updated_by: 'Dr. Arjun Mehta',
+  created_at: addDays(-120),
+})
+
+const DEMO_DOCTORS = [
+  { doctor_id: 'doc-1', name: 'Dr. Arjun Mehta', specialization: 'Cardiologist' },
+  { doctor_id: 'doc-2', name: 'Dr. Nisha Verma', specialization: 'Pulmonologist' },
+  { doctor_id: 'doc-3', name: 'Dr. Rhea Kapoor', specialization: 'General Physician' },
+]
+
+const DEMO_FILES = [
+  { id: 'file-1', file_name: 'Annual_Blood_Report.pdf', file_type: 'report', file_size: 1543000, upload_date: addDays(-8), notes: 'Routine annual bloodwork summary.' },
+  { id: 'file-2', file_name: 'Cardiology_Followup_Prescription.pdf', file_type: 'prescription', file_size: 642000, upload_date: addDays(-4), notes: 'Follow-up prescription after mild chest discomfort.' },
+  { id: 'file-3', file_name: 'Chest_Xray_May2026.png', file_type: 'scan', file_size: 2814000, upload_date: addDays(-2), notes: 'Uploaded for demo review in provider workflow.' },
+]
+
+const DEMO_TAGS = [
+  { id: 'tag-1', tag: 'stable', doctor_name: 'Dr. Rhea Kapoor' },
+  { id: 'tag-2', tag: 'follow-up', doctor_name: 'Dr. Arjun Mehta' },
+]
+
+const DEMO_DIAGNOSES = [
+  {
+    id: 'diag-1',
+    doctor_name: 'Dr. Rhea Kapoor',
+    created_at: addDays(-11),
+    diagnosis: 'Mild seasonal viral syndrome with fatigue and congestion. Hydration and observation advised.',
+    prescription: 'Paracetamol SOS, steam inhalation, and 3 days of rest.',
+    follow_up_date: addDays(5),
+  },
+  {
+    id: 'diag-2',
+    doctor_name: 'Dr. Arjun Mehta',
+    created_at: addDays(-3),
+    diagnosis: 'Intermittent chest tightness likely linked to stress and sleep deprivation. Vitals stable.',
+    prescription: 'Lifestyle adjustment, hydration, repeat check if symptoms persist.',
+    follow_up_date: addDays(10),
+  },
+]
+
+const createDemoAppointments = () => ([
+  {
+    id: 'appt-1',
+    doctor_id: 'doc-1',
+    doctor_name: 'Dr. Arjun Mehta',
+    date: addDays(1),
+    time_slot: '10:30 AM',
+    reason: 'Follow-up on chest discomfort and sleep-related fatigue.',
+    status: 'confirmed',
+  },
+  {
+    id: 'appt-2',
+    doctor_id: 'doc-3',
+    doctor_name: 'Dr. Rhea Kapoor',
+    date: addDays(12),
+    time_slot: '04:15 PM',
+    reason: 'General wellness review and medication discussion.',
+    status: 'pending',
+  },
+])
+
+const DEMO_PINGS = [
+  {
+    id: 'ping-1',
+    doctor_name: 'Dr. Arjun Mehta',
+    message: 'Please keep your latest blood report ready before tomorrow’s consultation.',
+  },
+]
+
+const createDemoBundle = () => ({
+  patient: createDemoPatient(),
+  files: DEMO_FILES.map(file => ({ ...file })),
+  tags: DEMO_TAGS.map(tag => ({ ...tag })),
+  diagnoses: DEMO_DIAGNOSES.map(diagnosis => ({ ...diagnosis })),
+  doctors: DEMO_DOCTORS.map(doctor => ({ ...doctor })),
+  appointments: createDemoAppointments(),
+  pings: DEMO_PINGS.map(ping => ({ ...ping })),
+})
+
 /* ----------------------------------------------------------------
    SHARED COMPONENTS
 ---------------------------------------------------------------- */
@@ -182,18 +284,20 @@ function Spinner({ size = 18, color = '#fff' }) {
   )
 }
 
-function AppointmentCountBadge({ pid, onBook }) {
+function AppointmentCountBadge({ pid, onBook, count: externalCount = null, demoMode = false }) {
   const [count, setCount] = useState(0)
+  const displayCount = externalCount ?? count
   useEffect(() => {
+    if (externalCount !== null || demoMode) return
     authFetch('/appointments').then(d => {
       const active = (d.data || []).filter(a => a.status === 'pending' || a.status === 'confirmed')
       setCount(active.length)
     }).catch(()=>{})
-  }, [])
+  }, [externalCount, demoMode])
   return (
     <div className="welcome-stat" onClick={onBook} style={{ background:'rgba(255,255,255,0.08)', borderRadius:12, padding:'10px 16px', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer' }}>
-      <p style={{ color:'#fff', fontWeight:700, fontSize:'.9rem' }}>{count} Appointment{count !== 1 ? 's' : ''}</p>
-      <p style={{ color:'rgba(255,255,255,0.38)', fontSize:'.72rem', marginTop:1 }}>{count === 0 ? 'Book one →' : 'Upcoming'}</p>
+      <p style={{ color:'#fff', fontWeight:700, fontSize:'.9rem' }}>{displayCount} Appointment{displayCount !== 1 ? 's' : ''}</p>
+      <p style={{ color:'rgba(255,255,255,0.38)', fontSize:'.72rem', marginTop:1 }}>{displayCount === 0 ? 'Book one →' : 'Upcoming'}</p>
     </div>
   )
 }
@@ -576,10 +680,11 @@ function FileUploader({ pid, onUploaded }) {
 /* ----------------------------------------------------------------
    FILE LIBRARY — Shows uploaded files
 ---------------------------------------------------------------- */
-function FileLibrary({ files, loading, onDelete, onRefresh }) {
+function FileLibrary({ files, loading, onDelete, onRefresh, readOnly = false }) {
   const [deleting, setDeleting] = useState(null)
 
   const handleDelete = async (file) => {
+    if (readOnly) return
     if (!confirm(`Delete "${file.file_name}"?`)) return
     setDeleting(file.id)
     try {
@@ -620,9 +725,11 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
                 {f.file_url && (
                   <a href={f.file_url} target="_blank" rel="noreferrer" className="icon-button icon-button-view">👁️</a>
                 )}
-                <button onClick={() => handleDelete(f)} disabled={deleting === f.id} className="icon-button icon-button-danger">
-                  {deleting === f.id ? <Spinner size={14} color="#ef4444" /> : '🗑️'}
-                </button>
+                {!readOnly && (
+                  <button onClick={() => handleDelete(f)} disabled={deleting === f.id} className="icon-button icon-button-danger">
+                    {deleting === f.id ? <Spinner size={14} color="#ef4444" /> : '🗑️'}
+                  </button>
+                )}
               </div>
             </div>
             {/* Bottom row: metadata */}
@@ -643,7 +750,7 @@ function FileLibrary({ files, loading, onDelete, onRefresh }) {
 /* ----------------------------------------------------------------
    AI CHATBOT PANEL
 ---------------------------------------------------------------- */
-function ChatBot({ patient, onClose, onNavigate }) {
+function ChatBot({ patient, onClose, onNavigate, demoMode = false }) {
   const [msgs,   setMsgs]   = useState([{ role:'ai', text:"Hi! I'm CareSync AI, your clinical assistant. Describe your symptoms and I'll help you understand them and suggest the right doctor.", doctor:null }])
   const [inp,    setInp]    = useState('')
   const [typing, setTyping] = useState(false)
@@ -659,6 +766,34 @@ function ChatBot({ patient, onClose, onNavigate }) {
     const txt = inp.trim()
     setMsgs(m => [...m, { role:'user', text:txt, doctor:null }])
     setInp(''); setTyping(true)
+    if (demoMode) {
+      window.setTimeout(() => {
+        const lower = txt.toLowerCase()
+        let reply = 'This is a frontend-only demo response. In the live product, CareSync AI would analyse your message through the backend and guide you to the right next step.'
+        let doctor = null
+        let redirect = 'files'
+
+        if (lower.includes('chest') || lower.includes('heart')) {
+          reply = 'For this demo, I would recommend a cardiology follow-up. You can jump to appointments to see how booking looks in the UI.'
+          doctor = DEMO_DOCTORS[0]
+          redirect = 'appointments'
+        } else if (lower.includes('breath') || lower.includes('cough')) {
+          reply = 'This looks like a pulmonology-style workflow in the demo. I can point you to a specialist booking flow.'
+          doctor = DEMO_DOCTORS[1]
+          redirect = 'appointments'
+        } else if (lower.includes('report') || lower.includes('file') || lower.includes('upload')) {
+          reply = 'You can review the file library and upload experience from the demo dashboard. Upload is intentionally disabled here because this mode is frontend-only.'
+          redirect = 'files'
+        } else if (lower.includes('diagnosis') || lower.includes('prescription')) {
+          reply = 'I can take you to the diagnosis timeline so you can preview how doctor notes and treatment history appear to patients.'
+          redirect = 'diagnosis'
+        }
+
+        setMsgs(m => [...m, { role:'ai', text:reply, doctor, redirect }])
+        setTyping(false)
+      }, 650)
+      return
+    }
     try {
       const data = await authFetch('/chat/message', {
         method: 'POST',
@@ -796,7 +931,7 @@ function ChatBot({ patient, onClose, onNavigate }) {
 /* ----------------------------------------------------------------
    DASHBOARD — Per-patient, personalised
 ---------------------------------------------------------------- */
-function Dashboard({ patient, onLogout }) {
+function Dashboard({ patient, onLogout, demoMode = false, onPatientChange, demoData = null, onDemoDataChange, onOpenManual }) {
   const [activeTab, setActiveTab]   = useState('overview')
   const [chat,      setChat]        = useState(false)
   const [preselectDoctor, setPreselectDoctor] = useState(null)
@@ -818,13 +953,28 @@ function Dashboard({ patient, onLogout }) {
   }
 
   const saveEdit = async () => {
+    if (demoMode) {
+      const weight = parseFloat(editForm.weight_kg)
+      const height = parseFloat(editForm.height_cm)
+      const bmi = weight && height ? (weight / Math.pow(height / 100, 2)).toFixed(1) : patient?.bmi
+      const nextPatient = {
+        ...patient,
+        ...editForm,
+        bmi,
+      }
+      if (onPatientChange) onPatientChange(nextPatient)
+      if (onDemoDataChange) onDemoDataChange(prev => ({ ...prev, patient: nextPatient }))
+      setEditResult({ success: true, message: 'Demo profile updated locally.' })
+      setTimeout(() => setEditPhysical(false), 900)
+      return
+    }
     setEditSaving(true); setEditResult(null)
     try {
       const res = await authFetch('/auth/profile', {
         method: 'PUT',
         body: JSON.stringify(editForm),
       })
-      setPatient(res.data)
+      if (onPatientChange) onPatientChange(res.data)
       storage.set('cs_patient', res.data)
       setEditResult({ success: true, message: 'Profile updated successfully!' })
       setTimeout(() => setEditPhysical(false), 1200)
@@ -836,6 +986,7 @@ function Dashboard({ patient, onLogout }) {
 
   // Global OTP notification polling — visible on ALL tabs
   useEffect(() => {
+    if (demoMode) return
     const poll = async () => {
       try {
         const d = await authFetch('/appointments/otp-notification')
@@ -854,6 +1005,10 @@ function Dashboard({ patient, onLogout }) {
   const bmiCat   = bmiCategory(bmi)
 
   const fetchFiles = async () => {
+    if (demoMode) {
+      setFiles(demoData?.files || [])
+      return
+    }
     setFilesLoading(true)
     try {
       const data = await authFetch('/files')
@@ -862,7 +1017,13 @@ function Dashboard({ patient, onLogout }) {
     finally { setFilesLoading(false) }
   }
 
-  useEffect(() => { if (activeTab === 'files') fetchFiles() }, [activeTab])
+  useEffect(() => {
+    if (demoMode) {
+      setFiles(demoData?.files || [])
+      return
+    }
+    if (activeTab === 'files') fetchFiles()
+  }, [activeTab, demoMode, demoData])
 
   const TABS = [
     { id:'overview',      label:'Overview',     icon:'🏠' },
@@ -892,9 +1053,10 @@ function Dashboard({ patient, onLogout }) {
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <button className="btn desktop-tabs" style={{ padding:'8px 18px', fontSize:'.82rem', display:'inline-flex' }} onClick={() => setChat(true)}>🤖 AI Chat</button>
+            <button className="btn-o desktop-tabs" style={{ padding:'8px 18px', fontSize:'.82rem' }} onClick={onOpenManual}>User Manual</button>
             <div style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 12px 6px 6px', borderRadius:50, border:'1px solid rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.06)', cursor:'pointer' }} onClick={onLogout}>
               <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#00b4a0,#00d4c8)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:'.78rem' }}>{initials}</div>
-              <span className="desktop-tabs" style={{ display:'inline', fontSize:'.8rem', fontWeight:600, color:'rgba(255,255,255,0.68)' }}>Sign out</span>
+              <span className="desktop-tabs" style={{ display:'inline', fontSize:'.8rem', fontWeight:600, color:'rgba(255,255,255,0.68)' }}>{demoMode ? 'Exit demo' : 'Sign out'}</span>
             </div>
           </div>
         </div>
@@ -913,6 +1075,10 @@ function Dashboard({ patient, onLogout }) {
               <span style={{ color: (activeTab === t.id && t.id !== 'chat') || (t.id === 'chat' && chat) ? 'var(--c-teal)' : 'var(--c-muted)' }}>{t.label}</span>
             </button>
           ))}
+          <button className="mobile-nav-btn" onClick={onOpenManual}>
+            <span>📘</span>
+            <span style={{ color:'var(--c-muted)' }}>Manual</span>
+          </button>
           <button className="mobile-nav-btn" onClick={onLogout}>
             <span>🚪</span>
             <span style={{ color:'var(--c-muted)' }}>Out</span>
@@ -938,6 +1104,11 @@ function Dashboard({ patient, onLogout }) {
                   Patient ID: <span style={{ color:'var(--c-cyan)', fontWeight:700, fontFamily:'var(--font-h)' }}>{patient?.pid}</span>
                   &nbsp;·&nbsp; Your health summary is looking great.
                 </p>
+                {demoMode && (
+                  <div className="demo-banner">
+                    Demo mode is running entirely in the frontend. Data is mocked for presentation only and does not touch your backend.
+                  </div>
+                )}
                 <div className="welcome-stats" style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
                   {[
                     [`${files.filter(f=>f).length} Files`, 'Uploaded'],
@@ -947,7 +1118,12 @@ function Dashboard({ patient, onLogout }) {
                       <p style={{ color:'rgba(255,255,255,0.38)', fontSize:'.72rem', marginTop:1 }}>{l}</p>
                     </div>
                   ))}
-                  <AppointmentCountBadge pid={patient?.pid} onBook={() => setActiveTab('appointments')} />
+                  <AppointmentCountBadge
+                    pid={patient?.pid}
+                    onBook={() => setActiveTab('appointments')}
+                    count={demoMode ? (demoData?.appointments || []).filter(a => a.status === 'pending' || a.status === 'confirmed').length : null}
+                    demoMode={demoMode}
+                  />
                 </div>
               </div>
             </motion.div>
@@ -1070,7 +1246,7 @@ function Dashboard({ patient, onLogout }) {
 
         {/* -- FILES TAB -- */}
         {/* -- DIAGNOSIS TAB — Patient view -- */}
-        {activeTab === 'diagnosis' && <PatientDiagnosisTab patient={patient} />}
+        {activeTab === 'diagnosis' && <PatientDiagnosisTab patient={patient} demoMode={demoMode} demoDiagnoses={demoData?.diagnoses} demoTags={demoData?.tags} />}
 
         {activeTab === 'files' && (
           <div style={{ maxWidth:800, margin:'0 auto' }}>
@@ -1079,16 +1255,25 @@ function Dashboard({ patient, onLogout }) {
                 <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.6rem' }}>My Medical Files</h1>
                 <p style={{ color:'var(--c-muted)', fontSize:'.85rem', marginTop:4 }}>{files.length} file{files.length !== 1 ? 's' : ''} stored securely</p>
               </div>
-              <button className="btn" style={{ padding:'10px 20px', fontSize:'.84rem' }} onClick={() => setActiveTab('upload')}>+ Upload New</button>
+              <button className="btn" style={{ padding:'10px 20px', fontSize:'.84rem' }} onClick={() => setActiveTab('upload')}>{demoMode ? 'Preview Upload' : '+ Upload New'}</button>
             </div>
             <div className="card" style={{ padding:24 }}>
-              <FileLibrary files={files} loading={filesLoading} onDelete={() => {}} onRefresh={fetchFiles} />
+              <FileLibrary files={files} loading={filesLoading} onDelete={() => {}} onRefresh={fetchFiles} readOnly={demoMode} />
             </div>
           </div>
         )}
 
         {/* -- APPOINTMENTS TAB -- */}
-        {activeTab === 'appointments' && <AppointmentsTab patient={patient} preselectDoctor={preselectDoctor} onPreselectUsed={() => setPreselectDoctor(null)} />}
+        {activeTab === 'appointments' && (
+          <AppointmentsTab
+            patient={patient}
+            preselectDoctor={preselectDoctor}
+            onPreselectUsed={() => setPreselectDoctor(null)}
+            demoMode={demoMode}
+            demoData={demoData}
+            onDemoDataChange={onDemoDataChange}
+          />
+        )}
 
         {/* -- UPLOAD TAB -- */}
         {activeTab === 'upload' && (
@@ -1096,11 +1281,35 @@ function Dashboard({ patient, onLogout }) {
             <div style={{ marginBottom:22 }}>
               <h1 style={{ fontFamily:'var(--font-h)', fontWeight:800, fontSize:'1.6rem' }}>Upload Documents</h1>
               <p style={{ color:'var(--c-muted)', fontSize:'.85rem', marginTop:4 }}>
-                Upload prescriptions, lab reports, scans, or any health-related documents.
+                {demoMode
+                  ? 'This screen is available in the deployed demo so judges can see the UI, but it stays frontend-only and does not upload anything.'
+                  : 'Upload prescriptions, lab reports, scans, or any health-related documents.'}
               </p>
             </div>
             <div className="card" style={{ padding:28 }}>
-              <FileUploader pid={patient?.pid} onUploaded={() => { fetchFiles(); setActiveTab('files') }} />
+              {demoMode ? (
+                <div className="demo-manual-card" style={{ textAlign:'left' }}>
+                  <span className="demo-manual-eyebrow">Frontend-only preview</span>
+                  <h3 style={{ fontFamily:'var(--font-h)', fontSize:'1.2rem', margin:'10px 0 8px' }}>Upload flow visible, backend disabled</h3>
+                  <p style={{ color:'var(--c-muted)', lineHeight:1.7 }}>
+                    In the live product, users can attach reports, scans, and prescriptions here. For tomorrow’s presentation this panel is intentionally non-functional so the deployed site never depends on a suspended API.
+                  </p>
+                  <div className="manual-step-list" style={{ marginTop:18 }}>
+                    {[
+                      'Drag-and-drop UI remains visible for walkthroughs and screenshots.',
+                      'No files are transmitted, saved, or validated in demo mode.',
+                      'The sample files shown in the library are seeded locally in the frontend.',
+                    ].map(item => (
+                      <div key={item} className="manual-step-item">
+                        <div className="manual-step-index">i</div>
+                        <p>{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <FileUploader pid={patient?.pid} onUploaded={() => { fetchFiles(); setActiveTab('files') }} />
+              )}
             </div>
           </div>
         )}
@@ -1207,7 +1416,7 @@ function Dashboard({ patient, onLogout }) {
         </div>
       )}
 
-      {chat && <ChatBot patient={patient} onClose={() => setChat(false)} onNavigate={(tab, doctor=null) => { if(doctor) setPreselectDoctor(doctor); setActiveTab(tab); setChat(false); }} />}
+      {chat && <ChatBot patient={patient} onClose={() => setChat(false)} onNavigate={(tab, doctor=null) => { if(doctor) setPreselectDoctor(doctor); setActiveTab(tab); setChat(false); }} demoMode={demoMode} />}
     </div>
   )
 }
@@ -1215,7 +1424,7 @@ function Dashboard({ patient, onLogout }) {
 /* ----------------------------------------------------------------
    LANDING PAGE
 ---------------------------------------------------------------- */
-function Landing({ onOpenAuth, onDoctorPortal }) {
+function Landing({ onOpenAuth, onDoctorPortal, onTryDemo, onOpenManual }) {
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 50)
@@ -1254,6 +1463,7 @@ function Landing({ onOpenAuth, onDoctorPortal }) {
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <button className="btn-ow desktop-tabs" style={{ fontSize:'.92rem', padding:'12px 24px' }} onClick={onDoctorPortal}>Doctor Portal</button>
+            <button className="btn-o desktop-tabs" style={{ fontSize:'.92rem', padding:'12px 24px', color:'#fff', borderColor:'rgba(255,255,255,0.22)' }} onClick={onOpenManual}>User Manual</button>
             <button className="btn" style={{ padding:'10px 20px', fontSize:'.82rem' }} onClick={onOpenAuth}>Get Started</button>
           </div>
         </div>
@@ -1398,7 +1608,6 @@ function Landing({ onOpenAuth, onDoctorPortal }) {
             <Logo size={28} radius={8} />
             <span>CareSync</span>
           </div>
-          <p>© 2026 CareSync Health Technologies · HIPAA Compliant · Secure Doctor Session Access</p>
         </div>
         <div className="landing-footer-links">
           <a href="#security">Privacy Protocol</a>
@@ -1406,6 +1615,23 @@ function Landing({ onOpenAuth, onDoctorPortal }) {
           <a href="#providers">For Providers</a>
         </div>
       </footer>
+
+      <section className="demo-cta-section">
+        <div className="demo-cta-card">
+          <div>
+            <span className="demo-cta-kicker">Presentation fallback</span>
+            <h2>Try for free</h2>
+            <p>
+              Launch a backend-free Demo User directly from the deployed website and preview the patient dashboard, appointments,
+              files, diagnosis history, and AI flow with seeded data.
+            </p>
+          </div>
+          <div className="demo-cta-actions">
+            <button className="btn" style={{ fontSize:'.96rem', padding:'15px 28px' }} onClick={onTryDemo}>Enter Demo User</button>
+            <button className="btn-ow" style={{ fontSize:'.96rem', padding:'15px 28px', background:'rgba(255,255,255,0.18)', borderColor:'rgba(255,255,255,0.34)', color:'#fff' }} onClick={onOpenManual}>Open User Manual</button>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
@@ -1418,7 +1644,7 @@ function Landing({ onOpenAuth, onDoctorPortal }) {
 /* ----------------------------------------------------------------
    PATIENT DIAGNOSIS TAB — view doctor diagnoses
 ---------------------------------------------------------------- */
-function PatientDiagnosisTab({ patient }) {
+function PatientDiagnosisTab({ patient, demoMode = false, demoDiagnoses = [], demoTags = [] }) {
   const [diagnoses, setDiagnoses] = useState([])
   const [tags,      setTags]      = useState([])
   const [loading,   setLoading]   = useState(true)
@@ -1433,6 +1659,12 @@ function PatientDiagnosisTab({ patient }) {
   }
 
   useEffect(() => {
+    if (demoMode) {
+      setDiagnoses(demoDiagnoses || [])
+      setTags(demoTags || [])
+      setLoading(false)
+      return
+    }
     const load = async () => {
       setLoading(true)
       try {
@@ -1446,7 +1678,7 @@ function PatientDiagnosisTab({ patient }) {
       finally { setLoading(false) }
     }
     load()
-  }, [patient?.pid])
+  }, [patient?.pid, demoMode, demoDiagnoses, demoTags])
 
   if (loading) return (
     <div style={{ display:'flex', justifyContent:'center', padding:60 }}>
@@ -1529,7 +1761,7 @@ function PatientDiagnosisTab({ patient }) {
   )
 }
 
-function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
+function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed, demoMode = false, demoData = null, onDemoDataChange }) {
   const [doctors,       setDoctors]       = useState([])
   const [appointments,  setAppointments]  = useState([])
   const [showBook,      setShowBook]      = useState(false)
@@ -1545,10 +1777,16 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
 
 
   useEffect(() => {
+    if (demoMode) {
+      setDoctors(demoData?.doctors || [])
+      setAppointments(demoData?.appointments || [])
+      setPings(demoData?.pings || [])
+      return
+    }
     fetchDoctors()
     fetchAppointments()
     fetchPings()
-  }, [])
+  }, [demoMode, demoData])
 
   // Auto-open booking form and pre-select doctor from chatbot recommendation
   useEffect(() => {
@@ -1576,16 +1814,23 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
   }, [selDoctor, selDate])
 
   const fetchDoctors = async () => {
+    if (demoMode) { setDoctors(demoData?.doctors || []); return }
     try { const d = await authFetch('/doctors'); setDoctors(d.data || []) } catch(e){}
   }
   const fetchAppointments = async () => {
+    if (demoMode) { setAppointments(demoData?.appointments || []); return }
     try { const d = await authFetch('/appointments'); setAppointments(d.data || []) } catch(e){}
   }
   const fetchPings = async () => {
+    if (demoMode) { setPings(demoData?.pings || []); return }
     try { const d = await authFetch('/diagnoses/pings/mine'); setPings(d.data || []) } catch(e){}
   }
 
   const fetchSlots = async () => {
+    if (demoMode) {
+      setAvailSlots(['09:30 AM', '11:00 AM', '02:15 PM', '04:45 PM'])
+      return
+    }
     setSlotsLoading(true); setSelSlot('')
     try {
       const d = await authFetch(`/doctors/${selDoctor}/available-slots?date=${selDate}`)
@@ -1594,10 +1839,33 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
     finally { setSlotsLoading(false) }
   }
   const dismissPing = async (id) => {
+    if (demoMode) {
+      setPings(prev => prev.filter(p => p.id !== id))
+      if (onDemoDataChange) onDemoDataChange(prev => ({ ...prev, pings: prev.pings.filter(p => p.id !== id) }))
+      return
+    }
     try { await authFetch(`/diagnoses/pings/${id}/read`, { method:'PATCH' }); fetchPings() } catch(e){}
   }
   const bookAppointment = async () => {
     if (!selDoctor || !selDate || !selSlot) return
+    if (demoMode) {
+      const doctor = doctors.find(d => (d.doctor_id || d.id) === selDoctor)
+      const newAppointment = {
+        id: `appt-${Date.now()}`,
+        doctor_id: selDoctor,
+        doctor_name: doctor?.name || 'Selected doctor',
+        date: selDate,
+        time_slot: selSlot,
+        reason,
+        status: 'pending',
+      }
+      const nextAppointments = [newAppointment, ...(demoData?.appointments || [])]
+      setAppointments(nextAppointments)
+      if (onDemoDataChange) onDemoDataChange(prev => ({ ...prev, appointments: nextAppointments }))
+      setResult({ success:true, message:'Demo appointment added locally.' })
+      setShowBook(false); setSelDoctor(null); setSelDate(''); setSelSlot(''); setReason('')
+      return
+    }
     setLoading(true); setResult(null)
     try {
       await authFetch('/appointments', { method:'POST', body: JSON.stringify({ doctor_id:selDoctor, date:selDate, time_slot:selSlot, reason }) })
@@ -1608,6 +1876,14 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
     finally { setLoading(false) }
   }
   const cancelAppointment = async (id) => {
+    if (demoMode) {
+      const nextAppointments = (demoData?.appointments || []).map(appointment =>
+        appointment.id === id ? { ...appointment, status: 'cancelled' } : appointment
+      )
+      setAppointments(nextAppointments)
+      if (onDemoDataChange) onDemoDataChange(prev => ({ ...prev, appointments: nextAppointments }))
+      return
+    }
     if (!confirm('Cancel this appointment?')) return
     try { await authFetch(`/appointments/${id}/cancel`, { method:'PATCH' }); fetchAppointments() } catch(e){ alert(e.message) }
   }
@@ -1642,7 +1918,7 @@ function AppointmentsTab({ patient, preselectDoctor = null, onPreselectUsed }) {
           <p style={{ color:'var(--c-muted)', fontSize:'.85rem', marginTop:4 }}>{appointments.filter(a => a.status !== 'cancelled').length} active appointment(s)</p>
         </div>
         <button className="btn" style={{ padding:'10px 20px', fontSize:'.84rem' }} onClick={() => setShowBook(v => !v)}>
-          {showBook ? '× Close' : '+ Book Appointment'}
+          {showBook ? '× Close' : demoMode ? '+ Simulate Booking' : '+ Book Appointment'}
         </button>
       </div>
 
@@ -2288,15 +2564,234 @@ function DoctorDashboard({ session, onLogout }) {
   )
 }
 
+function UserManual({ onBack, onTryDemo }) {
+  const quickLinks = [
+    ['start', 'Getting Started'],
+    ['signin', 'Sign In'],
+    ['signup', 'Sign Up'],
+    ['doctor', 'Doctor Portal'],
+    ['overview', 'Overview Dashboard'],
+    ['records', 'Diagnosis & Records'],
+    ['assistant', 'AI Assistant'],
+    ['demo', 'Demo Mode'],
+  ]
+
+  const sections = [
+    {
+      id: 'signin',
+      title: 'Sign in to CareSync',
+      image: '/manual/image7.png',
+      summary: 'Returning patients can access their dashboard from the sign-in modal.',
+      steps: [
+        'Open the homepage and select Get Started.',
+        'Keep the Sign In tab selected.',
+        'Enter your registered email address and password.',
+        'Press Sign In to open the patient dashboard.',
+      ],
+      notes: [
+        'Use a registered patient account when the backend is active.',
+        'If the API is unavailable, use Try for free instead of sign-in.',
+      ],
+    },
+    {
+      id: 'signup',
+      title: 'Create a patient account',
+      image: '/manual/image6.png',
+      summary: 'New users can create a profile with personal and health-related onboarding details.',
+      steps: [
+        'Switch from Sign In to Sign Up in the auth modal.',
+        'Fill in your full name, email, phone number, date of birth, gender, and password.',
+        'Continue through the remaining onboarding step to complete your health profile.',
+        'Submit the form to create your CareSync account.',
+      ],
+      notes: [
+        'Keeping profile details accurate helps doctors review your case faster.',
+        'This flow is part of the live backend experience, not the frontend-only demo.',
+      ],
+    },
+    {
+      id: 'doctor',
+      title: 'Doctor portal authentication',
+      image: '/manual/image5.png',
+      summary: 'Doctors enter through a dedicated portal and request OTP access for a specific patient.',
+      steps: [
+        'Open Doctor Portal from the landing page.',
+        'Select the doctor name from the dropdown.',
+        'Enter the patient PID exactly as shared by the patient.',
+        'Choose Send OTP to Patient and continue only after patient verification succeeds.',
+      ],
+      notes: [
+        'This workflow is for providers and depends on backend verification.',
+        'Never access patient records without the patient-approved OTP session.',
+      ],
+    },
+    {
+      id: 'overview',
+      title: 'Overview dashboard and health summary',
+      image: '/manual/image4.png',
+      summary: 'The overview page is the home base for patient health context, quick actions, and navigation.',
+      steps: [
+        'Review the welcome banner for patient ID, uploaded files, and upcoming appointments.',
+        'Use the top navigation to move between Appointments, Diagnosis, Files, Upload, AI Chat, and User Manual.',
+        'Check the Physical Profile cards for weight, height, BMI, and blood type.',
+        'Review the Vital Signs panel for heart rate, blood pressure, SpO2, and temperature.',
+      ],
+      notes: [
+        'The screenshot shown here is from Demo User mode, which runs entirely in the frontend.',
+        'Quick Actions provide shortcuts to upload, files, and AI chat.',
+      ],
+    },
+    {
+      id: 'records',
+      title: 'Diagnosis timeline and clinical status',
+      image: '/manual/image2.png',
+      summary: 'The Diagnosis area helps patients review prior doctor notes, prescriptions, and follow-up plans.',
+      steps: [
+        'Open the Diagnosis tab from the top navigation.',
+        'Review the clinical status chips such as Stable and Follow Up.',
+        'Read each consultation card for doctor name, date, diagnosis details, and treatment notes.',
+        'Check the highlighted follow-up badge to see the next recommended review date.',
+      ],
+      notes: [
+        'Diagnosis records are informational and should be interpreted with a licensed clinician.',
+        'Follow-up entries help patients understand what action is expected next.',
+      ],
+    },
+    {
+      id: 'assistant',
+      title: 'Use the AI clinical assistant',
+      image: '/manual/image1.png',
+      summary: 'CareSync AI helps users describe symptoms and navigate to the right care flow.',
+      steps: [
+        'Open AI Chat from the dashboard navigation or floating action button.',
+        'Tap a suggested symptom chip or type your own concern.',
+        'Review the AI response and follow any suggested next step.',
+        'If a doctor recommendation appears, continue into the appointment booking flow.',
+      ],
+      notes: [
+        'The AI assistant is for guidance only and does not replace professional medical advice.',
+        'In demo mode the assistant replies locally with presentation-safe mock guidance.',
+      ],
+    },
+  ]
+
+  return (
+    <div className="manual-page">
+      <div className="manual-shell">
+        <div className="manual-hero" id="start">
+          <span className="demo-manual-eyebrow">Frontend companion</span>
+          <h1>CareSync User Manual</h1>
+          <p>This guide walks first-time users through the main CareSync flows using the actual interface screens from your product so they can understand where to click and what each area is for.</p>
+          <div className="manual-hero-actions">
+            <button className="btn" onClick={onTryDemo}>Launch Demo User</button>
+            <button className="btn-o" onClick={onBack}>Back to site</button>
+          </div>
+        </div>
+
+        <div className="manual-toc">
+          {quickLinks.map(([id, label]) => (
+            <a key={id} href={`#${id}`} className="manual-toc-link">{label}</a>
+          ))}
+        </div>
+
+        <div className="manual-grid">
+          <div className="demo-manual-card">
+            <span className="demo-manual-eyebrow">Start here</span>
+            <h2>How to use this manual</h2>
+            <div className="manual-step-list">
+              {[
+                'Use Get Started for real patient authentication when the backend is available.',
+                'Use Try for free for a full frontend-only walkthrough with seeded patient data.',
+                'Use the screenshot sections below to understand each major flow before navigating the live UI.',
+              ].map((item, index) => (
+                <div key={item} className="manual-step-item">
+                  <div className="manual-step-index">{index + 1}</div>
+                  <p>{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="demo-manual-card" id="demo">
+            <span className="demo-manual-eyebrow">Demo mode</span>
+            <h2>When the backend is offline</h2>
+            <div className="manual-step-list">
+              {[
+                'Demo User is generated entirely in the frontend with mock vitals, appointments, files, and diagnosis history.',
+                'Edits and simulated bookings stay local to the browser session and are never sent to your API.',
+                'This mode is ideal for presentations, onboarding, and UI walkthroughs when Render has suspended the backend.',
+              ].map((item, index) => (
+                <div key={item} className="manual-step-item">
+                  <div className="manual-step-index">{index + 1}</div>
+                  <p>{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="manual-flow-stack">
+          {sections.map((section, index) => (
+            <section key={section.id} id={section.id} className="manual-flow-card">
+              <div className="manual-flow-copy">
+                <span className="demo-manual-eyebrow">Flow 0{index + 1}</span>
+                <h2>{section.title}</h2>
+                <p className="manual-flow-summary">{section.summary}</p>
+                <div className="manual-step-list">
+                  {section.steps.map((step, stepIndex) => (
+                    <div key={step} className="manual-step-item">
+                      <div className="manual-step-index">{stepIndex + 1}</div>
+                      <p>{step}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="manual-note-list">
+                  {section.notes.map(note => (
+                    <p key={note} className="manual-note">{note}</p>
+                  ))}
+                </div>
+              </div>
+              <div className="manual-flow-media">
+                <img src={section.image} alt={section.title} className="manual-flow-image" />
+              </div>
+            </section>
+          ))}
+        </div>
+
+        <div className="demo-manual-card">
+          <span className="demo-manual-eyebrow">Additional flows</span>
+          <h2>Files, uploads, and appointments</h2>
+          <div className="manual-step-list">
+            {[
+              'Files lets patients browse uploaded prescriptions, reports, and scans in one place.',
+              'Upload provides the document submission entry point for prescriptions and medical reports.',
+              'Appointments shows upcoming consultations, statuses, and doctor recommendations coming from AI or provider workflows.',
+              'For presentations, the demo mode keeps these experiences visible even if live backend actions are unavailable.',
+            ].map((item, index) => (
+              <div key={item} className="manual-step-item">
+                <div className="manual-step-index">{index + 1}</div>
+                <p>{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ----------------------------------------------------------------
    ROOT — Session persistence + routing
 ---------------------------------------------------------------- */
 export default function App() {
-  const [view,        setView]       = useState('landing')  // 'landing' | 'dashboard' | 'doctor'
+  const [view,        setView]       = useState('landing')  // 'landing' | 'dashboard' | 'doctor' | 'manual'
   const [patient,     setPatient]    = useState(null)
   const [doctorSession, setDoctorSession] = useState(null)  // { token, doctor, patient }
   const [authOpen,    setAuthOpen]   = useState(false)
   const [booting,     setBooting]    = useState(true)
+  const [sessionMode, setSessionMode] = useState('live')
+  const [demoData,    setDemoData]    = useState(createDemoBundle)
+  const [manualReturnView, setManualReturnView] = useState('landing')
 
   useEffect(() => {
     const token  = getToken()
@@ -2313,6 +2808,7 @@ export default function App() {
 
   // Refresh patient profile + vitals every 30 seconds
   useEffect(() => {
+    if (sessionMode === 'demo') return
     const refreshPatient = () => {
       if (getToken()) {
         authFetch('/auth/me').then(d => { setPatient(d.data); storage.set(PATIENT_KEY, d.data) }).catch(()=>{})
@@ -2323,10 +2819,29 @@ export default function App() {
     // Poll every 30 seconds so vitals update without needing to switch tabs
     const interval = setInterval(refreshPatient, 30000)
     return () => { window.removeEventListener('focus', refreshPatient); clearInterval(interval) }
-  }, [])
+  }, [sessionMode])
 
-  const handleAuthSuccess = (p) => { setPatient(p); setAuthOpen(false); setView('dashboard') }
-  const handleLogout      = () => { clearAuth(); setPatient(null); setView('landing') }
+  const openManual = (returnView = view) => {
+    setManualReturnView(returnView)
+    setView('manual')
+  }
+  const handleAuthSuccess = (p) => { setSessionMode('live'); setPatient(p); setAuthOpen(false); setView('dashboard') }
+  const handleTryDemo = () => {
+    clearAuth()
+    const demo = createDemoBundle()
+    setDemoData(demo)
+    setSessionMode('demo')
+    setPatient(demo.patient)
+    setAuthOpen(false)
+    setView('dashboard')
+  }
+  const handleLogout      = () => {
+    clearAuth()
+    setSessionMode('live')
+    setPatient(null)
+    setDemoData(createDemoBundle())
+    setView('landing')
+  }
   const handleDoctorLogin = (session) => { setDoctorSession(session); setView('doctor') }
   const handleDoctorLogout = () => { setDoctorSession(null); setView('landing') }
 
@@ -2338,10 +2853,28 @@ export default function App() {
 
   return (
     <>
-      {view === 'dashboard' && <Dashboard patient={patient} onLogout={handleLogout} />}
+      {view === 'dashboard' && (
+        <Dashboard
+          patient={patient}
+          onLogout={handleLogout}
+          demoMode={sessionMode === 'demo'}
+          onPatientChange={setPatient}
+          demoData={demoData}
+          onDemoDataChange={(updater) => setDemoData(prev => typeof updater === 'function' ? updater(prev) : updater)}
+          onOpenManual={() => openManual('dashboard')}
+        />
+      )}
       {view === 'doctor'    && <DoctorDashboard session={doctorSession} onLogout={handleDoctorLogout} />}
-      {view === 'landing'   && <Landing onOpenAuth={() => setAuthOpen(true)} onDoctorPortal={() => setView('doctor-login')} />}
+      {view === 'landing'   && (
+        <Landing
+          onOpenAuth={() => setAuthOpen(true)}
+          onDoctorPortal={() => setView('doctor-login')}
+          onTryDemo={handleTryDemo}
+          onOpenManual={() => openManual('landing')}
+        />
+      )}
       {view === 'doctor-login' && <DoctorLogin onSuccess={handleDoctorLogin} onBack={() => setView('landing')} />}
+      {view === 'manual' && <UserManual onBack={() => setView(manualReturnView)} onTryDemo={handleTryDemo} />}
       {authOpen && <AuthModal onSuccess={handleAuthSuccess} onClose={() => setAuthOpen(false)} />}
     </>
   )
